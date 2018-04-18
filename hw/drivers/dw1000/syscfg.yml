@@ -48,3 +48,6 @@ syscfg.defs:
         description: >
             OS Latency Guardband 
         value: ((uint32_t){0x1000})
+    DW1000_DEV_TASK_PRIO:
+        description: 'Task priority'
+        value:  5

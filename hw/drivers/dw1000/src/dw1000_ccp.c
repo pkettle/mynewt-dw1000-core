@@ -256,6 +256,7 @@ ccp_rx_complete_cb(dw1000_dev_instance_t * inst){
         int32_t tracking_interval = (int32_t) dw1000_read_reg(inst, RX_TTCKI_ID, 0, sizeof(int32_t));
         int32_t tracking_offset = (int32_t) dw1000_read_reg(inst, RX_TTCKO_ID, 0, sizeof(int32_t)) & RX_TTCKO_RXTOFS_MASK;
         frame->correction_factor = 1.0f + ((float)tracking_offset) / tracking_interval;
+        inst->ccp_time_rx_complete_cb(inst, frame->correction_factor, frame->reception_timestamp);
         if (ccp->config.postprocess) 
             os_eventq_put(os_eventq_dflt_get(), &ccp_callout_postprocess.c_ev);
     }
@@ -295,7 +296,7 @@ ccp_tx_complete_cb(dw1000_dev_instance_t * inst){
 
     if (ccp->status.timer_enabled) 
         os_callout_reset(&ccp_callout_timer, OS_TICKS_PER_SEC * (ccp->period - MYNEWT_VAL(OS_LATENCY)) * 1e-6);    
-    os_sem_release(&inst->ccp->sem);  
+    os_sem_release(&inst->ccp->sem);
 }
 
 
@@ -318,7 +319,7 @@ ccp_tx_complete_cb(dw1000_dev_instance_t * inst){
  */
 static dw1000_ccp_status_t 
 dw1000_ccp_blink(dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode){
-
+    printf("blinking-start\n");
     os_error_t err = os_sem_pend(&inst->ccp->sem,  OS_TIMEOUT_NEVER);
     assert(err == OS_OK);
 
@@ -339,6 +340,7 @@ dw1000_ccp_blink(dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode){
     if (ccp->status.start_tx_error){
         // Half Period Delay Warning occured try for the next epoch
         // Use seq_num to detect this on receiver size
+        printf("tx-error\n");
         previous_frame->transmission_timestamp += ((uint64_t)inst->ccp->period << 15);
         os_sem_release(&inst->ccp->sem);
     }  
@@ -346,6 +348,7 @@ dw1000_ccp_blink(dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode){
         err = os_sem_pend(&inst->ccp->sem, OS_TIMEOUT_NEVER); // Wait for completion of transactions 
         os_sem_release(&inst->ccp->sem);
     }
+    printf("blink-done\n");
    return ccp->status;
 }
 

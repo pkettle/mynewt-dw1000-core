@@ -40,7 +40,8 @@ extern "C" {
 #define DWT_TIME_UNITS          (1.0/499.2e6/128.0)
 
 #define DW1000_DEV_TASK_PRIO        MYNEWT_VAL(DW1000_DEV_TASK_PRIO)
-#define DW1000_DEV_TASK_STACK_SZ    MYNEWT_VAL(DW1000_DEV_TASK_STACK_SZ)
+//#define DW1000_DEV_TASK_STACK_SZ    MYNEWT_VAL(DW1000_DEV_TASK_STACK_SZ)
+#define DW1000_DEV_TASK_STACK_SZ    512
 
 typedef enum _dw1000_dev_modes_t{
     DWT_BLOCKING,
@@ -157,6 +158,7 @@ typedef struct _dw1000_dev_instance_t{
     void (* pan_rx_timeout_cb) (struct _dw1000_dev_instance_t *);    
 #endif
 
+    void (* ccp_time_rx_complete_cb) (struct _dw1000_dev_instance_t * , float correction_factor , uint64_t reception_timestamp);
     union {
         uint16_t fctrl;                         // Reported frame control 
         uint8_t fctrl_array[sizeof(uint16_t)];  //endianness safe interface
@@ -198,6 +200,7 @@ typedef struct _dw1000_dev_instance_t{
     struct os_task interrupt_task_str;
     os_stack_t interrupt_task_stack[DW1000_DEV_TASK_STACK_SZ];
     struct _dw1000_rng_instance_t * rng;
+    struct _dw1000_time_instance_t *time;
 #if MYNEWT_VAL(DW1000_LWIP)
     struct _dw1000_lwip_instance_t * lwip;
 #endif

@@ -75,6 +75,7 @@ void dw1000_ccp_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * ccp_
 void dw1000_ccp_start(dw1000_dev_instance_t * inst);
 void dw1000_ccp_stop(dw1000_dev_instance_t * inst);
 
+
 #ifdef __cplusplus
 }
 #endif
