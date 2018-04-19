@@ -38,21 +38,27 @@ typedef struct _dw1000_time_status_t{
     uint16_t initialized:1;
 }dw1000_time_status_t;
 
+typedef struct _dw1000_time_config_t{
+        uint16_t postprocess:1;
+}dw1000_time_config_t;
+
 typedef struct _dw1000_time_instance_t{
     struct _dw1000_dev_instance_t * parent;
     dw1000_time_status_t status;
+    dw1000_time_config_t config;
     struct os_callout callout_timer;
     uint16_t slot_id;
     float correction_factor;
-    uint64_t reception_timestamp;
+    uint64_t ccp_reception_timestamp;
+    uint64_t transmission_timestamp;
 }dw1000_time_instance_t;
 
-typedef void (* time_ccp_rx_complete_cb )(dw1000_dev_instance_t *inst );
 dw1000_time_instance_t * dw1000_timer_init(dw1000_dev_instance_t * inst, uint16_t slot_id);
 void dw1000_timer_start(dw1000_dev_instance_t* inst);
 void dw1000_timer_stop(dw1000_dev_instance_t* inst);
 void dw1000_timer_free(dw1000_time_instance_t * inst);
-void dw1000_timer_set_callbacks(dw1000_dev_instance_t * inst, time_ccp_rx_complete_cb time_ccp_rx_complete_cb_t);
+void dw1000_timer_set_callbacks(dw1000_dev_instance_t * inst, dw1000_dev_cb_t time_ccp_rx_complete_cb);
+void dw1000_time_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * time_postprocess);
 
 #ifdef __cplusplus
 }

@@ -261,7 +261,7 @@ ccp_rx_complete_cb(dw1000_dev_instance_t * inst){
 #if MYNEWT_VAL(DW1000_TIME)
         dw1000_time_instance_t * time = inst->time;
         time->correction_factor = frame->correction_factor;
-        time->reception_timestamp = frame->reception_timestamp;
+        time->ccp_reception_timestamp = frame->reception_timestamp;
         inst->time_ccp_rx_complete_cb(inst);
 #endif
         if (ccp->config.postprocess) 
