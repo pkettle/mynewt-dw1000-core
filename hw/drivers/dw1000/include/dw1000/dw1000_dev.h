@@ -157,8 +157,9 @@ typedef struct _dw1000_dev_instance_t{
     void (* pan_tx_complete_cb) (struct _dw1000_dev_instance_t *);
     void (* pan_rx_timeout_cb) (struct _dw1000_dev_instance_t *);    
 #endif
-
-    void (* ccp_time_rx_complete_cb) (struct _dw1000_dev_instance_t * , float correction_factor , uint64_t reception_timestamp);
+#if MYNEWT_VAL(DW1000_TIME)
+    void (* time_ccp_rx_complete_cb) (struct _dw1000_dev_instance_t * inst);
+#endif
     union {
         uint16_t fctrl;                         // Reported frame control 
         uint8_t fctrl_array[sizeof(uint16_t)];  //endianness safe interface
@@ -200,7 +201,9 @@ typedef struct _dw1000_dev_instance_t{
     struct os_task interrupt_task_str;
     os_stack_t interrupt_task_stack[DW1000_DEV_TASK_STACK_SZ];
     struct _dw1000_rng_instance_t * rng;
+#if MYNEWT_VAL(DW1000_TIME)
     struct _dw1000_time_instance_t *time;
+#endif
 #if MYNEWT_VAL(DW1000_LWIP)
     struct _dw1000_lwip_instance_t * lwip;
 #endif

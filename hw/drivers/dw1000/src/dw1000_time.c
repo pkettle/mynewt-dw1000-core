@@ -36,16 +36,18 @@
 #include <dw1000/dw1000_ftypes.h>
 
 //#if MYNEWT_VAL(DW1000_CLOCK_CALIBRATION)
-#include <dw1000/dw1000_ccp.h>
+//#include <dw1000/dw1000_ccp.h>
 #include <dw1000/dw1000_time.h>
 
-void ccp_rx_time_complete_cb(dw1000_dev_instance_t * inst, float  correction_factor, uint64_t reception_timestamp)
+void time_rx_ccp_complete_cb(dw1000_dev_instance_t * inst)
 {
-           printf("correction factor == %lu\n",(uint32_t)(correction_factor * 10000000));
-           printf("reception_timestamp == %llu\n",reception_timestamp);
+    dw1000_time_instance_t * time =  inst->time;
+    printf("correction factor == %lu\n",(uint32_t)(time->correction_factor * 1000000000));
+    printf("reception_timestamp == %llu\n",time->reception_timestamp);
+
 }
 
-dw1000_time_instance_t * dw1000_timer_init(dw1000_dev_instance_t * inst, uint16_t slot_delay)
+dw1000_time_instance_t * dw1000_timer_init(dw1000_dev_instance_t * inst, uint16_t slot_id)
 {
     if (inst->time == NULL ) {
         inst->time = (dw1000_time_instance_t *) malloc(sizeof(dw1000_time_instance_t));
@@ -55,11 +57,12 @@ dw1000_time_instance_t * dw1000_timer_init(dw1000_dev_instance_t * inst, uint16_
     }
 
     inst->time->parent = inst;
-    dw1000_timer_set_callbacks(inst, ccp_rx_time_complete_cb);
+    inst->time->slot_id = slot_id;
+    dw1000_timer_set_callbacks(inst, time_rx_ccp_complete_cb);
     return inst->time;
 }
 
-void dw1000_timer_set_callbacks(dw1000_dev_instance_t * inst, ccp_time_rx_complete_cb ccp_time_rx_complete_cb_t)
+void dw1000_timer_set_callbacks(dw1000_dev_instance_t * inst, time_ccp_rx_complete_cb time_ccp_rx_complete_cb_t)
 {
-    inst->ccp_time_rx_complete_cb = ccp_time_rx_complete_cb_t;
+    inst->time_ccp_rx_complete_cb = time_ccp_rx_complete_cb_t;
 }

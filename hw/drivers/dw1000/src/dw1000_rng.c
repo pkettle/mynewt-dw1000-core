@@ -288,7 +288,6 @@ static void
 rng_rx_complete_cb(dw1000_dev_instance_t * inst)
 {
 
-    printf("Rxed\n");
     uint16_t code, dst_address; 
     dw1000_rng_config_t * config = inst->rng->config;
     dw1000_dev_control_t control = inst->control_rx_context;

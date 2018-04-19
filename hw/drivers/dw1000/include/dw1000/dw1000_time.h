@@ -1,5 +1,5 @@
 /* Copyright 2018, Decawave Limited, All Rights Reserved
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -7,7 +7,7 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *  http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
@@ -42,16 +42,17 @@ typedef struct _dw1000_time_instance_t{
     struct _dw1000_dev_instance_t * parent;
     dw1000_time_status_t status;
     struct os_callout callout_timer;
-    uint32_t slot_delay;
-    uint32_t correction_factor;
+    uint16_t slot_id;
+    float correction_factor;
+    uint64_t reception_timestamp;
 }dw1000_time_instance_t;
 
-typedef void (* ccp_time_rx_complete_cb )(dw1000_dev_instance_t *inst , float correction_factor , uint64_t reception_timstamp );
-dw1000_time_instance_t * dw1000_timer_init(dw1000_dev_instance_t * inst, uint16_t slot_delay);
+typedef void (* time_ccp_rx_complete_cb )(dw1000_dev_instance_t *inst );
+dw1000_time_instance_t * dw1000_timer_init(dw1000_dev_instance_t * inst, uint16_t slot_id);
 void dw1000_timer_start(dw1000_dev_instance_t* inst);
 void dw1000_timer_stop(dw1000_dev_instance_t* inst);
 void dw1000_timer_free(dw1000_time_instance_t * inst);
-void dw1000_timer_set_callbacks(dw1000_dev_instance_t * inst, ccp_time_rx_complete_cb ccp_time_rx_complete_cb_t);
+void dw1000_timer_set_callbacks(dw1000_dev_instance_t * inst, time_ccp_rx_complete_cb time_ccp_rx_complete_cb_t);
 
 #ifdef __cplusplus
 }
