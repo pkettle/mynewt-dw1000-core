@@ -54,3 +54,12 @@ syscfg.defs:
     DW1000_DEV_TASK_PRIO:
         description: 'Task priority'
         value:  5
+    DELTA:
+        description: >
+            Total slot time
+        value: 100
+    NSLOTS:
+        description: >
+            Number of slots
+        value: 10
+
