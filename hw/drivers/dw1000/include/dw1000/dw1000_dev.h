@@ -40,8 +40,7 @@ extern "C" {
 #define DWT_TIME_UNITS          (1.0/499.2e6/128.0)
 
 #define DW1000_DEV_TASK_PRIO        MYNEWT_VAL(DW1000_DEV_TASK_PRIO)
-//#define DW1000_DEV_TASK_STACK_SZ    MYNEWT_VAL(DW1000_DEV_TASK_STACK_SZ)
-#define DW1000_DEV_TASK_STACK_SZ    512
+#define DW1000_DEV_TASK_STACK_SZ    MYNEWT_VAL(DW1000_DEV_TASK_STACK_SZ)
 
 typedef enum _dw1000_dev_modes_t{
     DWT_BLOCKING,
@@ -69,7 +68,6 @@ typedef struct _dw1000_dev_status_t{
     uint32_t wakeup_LLDO:1;
     uint32_t rx_ranging_frame:1;     //Range Request bit set for inbound frame
     uint32_t tx_ranging_frame:1;     //Range Request bit set for outbound frame
-    uint32_t request_timeout:1;
     uint32_t sleeping:1;
 }dw1000_dev_status_t;
 
@@ -119,8 +117,8 @@ typedef struct _dw1000_dev_rxdiag_t{
 typedef struct _dw1000_dev_instance_t{
     struct os_dev uwb_dev;     /** Has to be here for cast in create_dev to work */
     struct os_mutex *spi_mutex;  /** Pointer to global spi mutex if available  */
+    struct os_sem sem;  // semphore for low level mac/phy functions. 
 
-    
     void (* tx_complete_cb) (struct _dw1000_dev_instance_t *);
     void (* rx_complete_cb) (struct _dw1000_dev_instance_t *);
     void (* rx_timeout_cb) (struct _dw1000_dev_instance_t *);
@@ -199,6 +197,7 @@ typedef struct _dw1000_dev_instance_t{
     struct os_eventq interrupt_eventq;
     struct os_event interrupt_ev;
     struct os_task interrupt_task_str;
+    uint8_t interrupt_task_prio;
     os_stack_t interrupt_task_stack[DW1000_DEV_TASK_STACK_SZ];
     struct _dw1000_rng_instance_t * rng;
 #if MYNEWT_VAL(DW1000_TIME)
