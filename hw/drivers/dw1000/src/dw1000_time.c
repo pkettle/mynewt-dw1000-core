@@ -48,7 +48,7 @@ void time_rx_ccp_complete_cb(dw1000_dev_instance_t * inst)
 
 }
 
-dw1000_time_instance_t * dw1000_timer_init(dw1000_dev_instance_t * inst, uint16_t slot_id)
+dw1000_time_instance_t * dw1000_time_init(dw1000_dev_instance_t * inst, uint16_t slot_id)
 {
     if (inst->time == NULL ) {
         inst->time = (dw1000_time_instance_t *) malloc(sizeof(dw1000_time_instance_t));
@@ -60,12 +60,12 @@ dw1000_time_instance_t * dw1000_timer_init(dw1000_dev_instance_t * inst, uint16_
     inst->time->parent = inst;
     inst->time->slot_id = slot_id;
     dw1000_time_set_postprocess(inst, &time_postprocess);
-    dw1000_timer_set_callbacks(inst, time_rx_ccp_complete_cb);
+    dw1000_time_set_callbacks(inst, time_rx_ccp_complete_cb);
     inst->time->status.initialized = 1;
     return inst->time;
 }
 
-void dw1000_timer_set_callbacks(dw1000_dev_instance_t * inst, dw1000_dev_cb_t time_ccp_rx_complete_cb)
+void dw1000_time_set_callbacks(dw1000_dev_instance_t * inst, dw1000_dev_cb_t time_ccp_rx_complete_cb)
 {
     inst->time_ccp_rx_complete_cb = time_ccp_rx_complete_cb;
 }
@@ -83,8 +83,8 @@ static void time_postprocess(struct os_event * ev){
     dw1000_dev_instance_t * inst = (dw1000_dev_instance_t *)ev->ev_arg;
     dw1000_time_instance_t * time = inst->time;
 
-    uint64_t delta = MYNEWT_VAL_DELTA * 1000000 ;
-    uint32_t  nslots = MYNEWT_VAL_NSLOTS;
+    uint64_t delta = MYNEWT_VAL(TDMA_DELTA) * 1000000 ;
+    uint32_t  nslots = MYNEWT_VAL(TDMA_NSLOTS);
     printf("ccp_reception_timestamp == %llu\n",time->ccp_reception_timestamp);
     time->transmission_timestamp = time->ccp_reception_timestamp + time->slot_id * delta / nslots;
     printf("transmission_timestamp == %llu\n",time->transmission_timestamp);

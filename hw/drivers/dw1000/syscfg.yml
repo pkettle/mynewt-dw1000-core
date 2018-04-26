@@ -52,11 +52,11 @@ syscfg.defs:
             OS Latency Guardband 
         value: ((uint32_t){0x1000})
 
-    DELTA:
+    TDMA_DELTA:
         description: >
             Total slot time
         value: 100
-    NSLOTS:
+    TDMA_NSLOTS:
         description: >
             Number of slots
         value: 10

@@ -53,11 +53,11 @@ typedef struct _dw1000_time_instance_t{
     uint64_t transmission_timestamp;
 }dw1000_time_instance_t;
 
-dw1000_time_instance_t * dw1000_timer_init(dw1000_dev_instance_t * inst, uint16_t slot_id);
-void dw1000_timer_start(dw1000_dev_instance_t* inst);
-void dw1000_timer_stop(dw1000_dev_instance_t* inst);
-void dw1000_timer_free(dw1000_time_instance_t * inst);
-void dw1000_timer_set_callbacks(dw1000_dev_instance_t * inst, dw1000_dev_cb_t time_ccp_rx_complete_cb);
+dw1000_time_instance_t * dw1000_time_init(dw1000_dev_instance_t * inst, uint16_t slot_id);
+void dw1000_time_start(dw1000_dev_instance_t* inst);
+void dw1000_time_stop(dw1000_dev_instance_t* inst);
+void dw1000_time_free(dw1000_time_instance_t * inst);
+void dw1000_time_set_callbacks(dw1000_dev_instance_t * inst, dw1000_dev_cb_t time_ccp_rx_complete_cb);
 void dw1000_time_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * time_postprocess);
 
 #ifdef __cplusplus
