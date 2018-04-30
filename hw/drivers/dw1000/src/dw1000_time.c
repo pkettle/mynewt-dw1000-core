@@ -43,6 +43,7 @@ static struct os_callout time_callout_postprocess;
 void time_rx_ccp_complete_cb(dw1000_dev_instance_t * inst)
 {
     dw1000_time_instance_t * time =  inst->time;
+    time->status.ccp_packet_received = true;
     if (time->config.postprocess)
         os_eventq_put(os_eventq_dflt_get(), &time_callout_postprocess.c_ev);
 
@@ -59,6 +60,7 @@ dw1000_time_instance_t * dw1000_time_init(dw1000_dev_instance_t * inst, uint16_t
 
     inst->time->parent = inst;
     inst->time->slot_id = slot_id;
+    inst->time->ccp_interval = 0xFFFFFFFF;
     dw1000_time_set_postprocess(inst, &time_postprocess);
     dw1000_time_set_callbacks(inst, time_rx_ccp_complete_cb);
     inst->time->status.initialized = 1;

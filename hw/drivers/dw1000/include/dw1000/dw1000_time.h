@@ -36,6 +36,7 @@ extern "C" {
 typedef struct _dw1000_time_status_t{
     uint16_t selfmalloc:1;
     uint16_t initialized:1;
+    uint16_t ccp_packet_received:1;
 }dw1000_time_status_t;
 
 typedef struct _dw1000_time_config_t{
@@ -51,6 +52,7 @@ typedef struct _dw1000_time_instance_t{
     float correction_factor;
     uint64_t ccp_reception_timestamp;
     uint64_t transmission_timestamp;
+    uint64_t ccp_interval;
 }dw1000_time_instance_t;
 
 dw1000_time_instance_t * dw1000_time_init(dw1000_dev_instance_t * inst, uint16_t slot_id);

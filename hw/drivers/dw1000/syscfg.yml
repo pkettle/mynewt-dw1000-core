@@ -41,8 +41,8 @@ syscfg.defs:
         value: ((float){5.4444e-04})
     CCP_PERIOD:
         description: >
-            Clock Calibration Packets Period 
-        value: ((uint32_t){0x020000})
+            Clock Calibration Packets Period in us 
+        value: ((uint32_t){500000})
     PAN_PERIOD:
         description: >
             PAN Discovery Packets Period 
