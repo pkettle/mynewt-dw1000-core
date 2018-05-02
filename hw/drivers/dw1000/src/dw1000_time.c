@@ -27,7 +27,6 @@
 #include <hal/hal_gpio.h>
 #include "bsp/bsp.h"
 
-
 #include <dw1000/dw1000_regs.h>
 #include <dw1000/dw1000_dev.h>
 #include <dw1000/dw1000_hal.h>
@@ -36,9 +35,11 @@
 #include <dw1000/dw1000_ftypes.h>
 #if MYNEWT_VAL(DW1000_TIME)
 #include <dw1000/dw1000_time.h>
+#include <dw1000/dw1000_ccp.h>
 
 static void time_postprocess(struct os_event * ev);
 static struct os_callout time_callout_postprocess;
+static uint64_t usec_exp = 0;
 
 void time_rx_ccp_complete_cb(dw1000_dev_instance_t * inst)
 {
@@ -46,7 +47,6 @@ void time_rx_ccp_complete_cb(dw1000_dev_instance_t * inst)
     time->status.ccp_packet_received = true;
     if (time->config.postprocess)
         os_eventq_put(os_eventq_dflt_get(), &time_callout_postprocess.c_ev);
-
 }
 
 dw1000_time_instance_t * dw1000_time_init(dw1000_dev_instance_t * inst, uint16_t slot_id)
@@ -85,12 +85,34 @@ static void time_postprocess(struct os_event * ev){
     dw1000_dev_instance_t * inst = (dw1000_dev_instance_t *)ev->ev_arg;
     dw1000_time_instance_t * time = inst->time;
 
-    uint64_t delta = MYNEWT_VAL(TDMA_DELTA) * 1000000 ;
+    uint64_t delta = MYNEWT_VAL(TDMA_DELTA);
     uint32_t  nslots = MYNEWT_VAL(TDMA_NSLOTS);
     printf("ccp_reception_timestamp == %llu\n",time->ccp_reception_timestamp);
-    time->transmission_timestamp = time->ccp_reception_timestamp + time->slot_id * delta / nslots;
+    //Convert everything to same domain and calculate
+    time->transmission_timestamp = (time->ccp_reception_timestamp + (uint64_t)((time->slot_id * delta / nslots)*499.2*128)) & 0xFFFFFFFFFF;
     printf("transmission_timestamp == %llu\n",time->transmission_timestamp);
-
 }
 
+bool check_time(dw1000_dev_instance_t* inst){
+    bool status = false;
+    dw1000_time_instance_t* time = inst->time;
+    uint64_t delta = MYNEWT_VAL(TDMA_DELTA);
+    uint32_t  nslots = MYNEWT_VAL(TDMA_NSLOTS);
+
+    if(time->status.ccp_packet_received == true){
+        usec_exp = os_cputime_ticks_to_usecs(os_cputime_get32());
+        time->status.ccp_packet_received = false;
+        status = true;
+    }else if(time->ccp_interval < ((os_cputime_ticks_to_usecs(os_cputime_get32()))-usec_exp)){
+        usec_exp = os_cputime_ticks_to_usecs(os_cputime_get32());
+        //Convert everything to same domain and calculate
+        //Calculate new expected arrival timestamp
+        time->ccp_reception_timestamp = (time->ccp_reception_timestamp + (uint64_t)((time->ccp_interval)*499.2*128)) & 0xFFFFFFFFFF;
+        //Now calculate new transmission timestamp
+        time->transmission_timestamp = (time->ccp_reception_timestamp + (uint64_t)((time->slot_id*delta / nslots)*499.2*128))& 0xFFFFFFFFFF;
+        inst->ccp->frames[(inst->ccp->idx)%inst->ccp->nframes]->reception_timestamp = 0;
+        status = true;
+    }
+    return status;
+}
 #endif // DW1000_TIME

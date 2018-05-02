@@ -54,8 +54,8 @@ syscfg.defs:
 
     TDMA_DELTA:
         description: >
-            Total slot time
-        value: 100
+            Total slot time in us
+        value: 100000
     TDMA_NSLOTS:
         description: >
             Number of slots

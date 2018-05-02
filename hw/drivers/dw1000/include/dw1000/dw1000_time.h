@@ -61,7 +61,7 @@ void dw1000_time_stop(dw1000_dev_instance_t* inst);
 void dw1000_time_free(dw1000_time_instance_t * inst);
 void dw1000_time_set_callbacks(dw1000_dev_instance_t * inst, dw1000_dev_cb_t time_ccp_rx_complete_cb);
 void dw1000_time_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * time_postprocess);
-
+bool check_time(dw1000_dev_instance_t* inst);
 #ifdef __cplusplus
 }
 #endif

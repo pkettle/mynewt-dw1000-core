@@ -269,7 +269,7 @@ ccp_rx_complete_cb(dw1000_dev_instance_t * inst){
         //So discard it
         if(previous_frame->reception_timestamp > 0){
         if(frame->reception_timestamp > previous_frame->reception_timestamp)
-            time->ccp_interval = (uint64_t)(((uint64_t)(frame->reception_timestamp - (uint64_t)previous_frame->reception_timestamp))*(1.0/499.2e6/128)*1e6);
+            time->ccp_interval = (uint64_t)(((uint64_t)(frame->reception_timestamp - (uint64_t)previous_frame->reception_timestamp))*(1.0/499.2e6/128)*1e6) >0;
         }
         inst->time_ccp_rx_complete_cb(inst);
 #endif
