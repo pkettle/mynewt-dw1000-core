@@ -59,9 +59,13 @@ dw1000_time_instance_t * dw1000_time_init(dw1000_dev_instance_t * inst, uint16_t
 void dw1000_time_start(dw1000_dev_instance_t* inst);
 void dw1000_time_stop(dw1000_dev_instance_t* inst);
 void dw1000_time_free(dw1000_time_instance_t * inst);
-void dw1000_time_set_callbacks(dw1000_dev_instance_t * inst, dw1000_dev_cb_t time_ccp_rx_complete_cb);
+void dw1000_time_set_callbacks(dw1000_dev_instance_t * inst, dw1000_dev_cb_t time_cb);
 void dw1000_time_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * time_postprocess);
 bool check_time(dw1000_dev_instance_t* inst);
+uint64_t time_relative(dw1000_dev_instance_t* inst, uint32_t delay);
+uint64_t time_absolute(dw1000_dev_instance_t* inst, uint64_t epoch, uint32_t delay);
+uint64_t time_now(dw1000_dev_instance_t* inst);
+
 #ifdef __cplusplus
 }
 #endif

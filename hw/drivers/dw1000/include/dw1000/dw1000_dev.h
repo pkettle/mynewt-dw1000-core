@@ -38,6 +38,7 @@ extern "C" {
 #define DWT_SUCCESS (0)
 #define DWT_ERROR   (-1)
 #define DWT_TIME_UNITS          (1.0/499.2e6/128.0)
+#define DWT_SYS_CLK_FRQ         125000000
 
 #define DW1000_DEV_TASK_PRIO        MYNEWT_VAL(DW1000_DEV_TASK_PRIO)
 #define DW1000_DEV_TASK_STACK_SZ    MYNEWT_VAL(DW1000_DEV_TASK_STACK_SZ)
@@ -156,7 +157,7 @@ typedef struct _dw1000_dev_instance_t{
     void (* pan_rx_timeout_cb) (struct _dw1000_dev_instance_t *);    
 #endif
 #if MYNEWT_VAL(DW1000_TIME)
-    void (* time_ccp_rx_complete_cb) (struct _dw1000_dev_instance_t * inst);
+    void (* time_cb) (struct _dw1000_dev_instance_t * inst);
 #endif
     union {
         uint16_t fctrl;                         // Reported frame control 

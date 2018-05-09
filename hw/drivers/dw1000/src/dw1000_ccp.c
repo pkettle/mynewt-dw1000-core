@@ -227,7 +227,7 @@ static void ccp_postprocess(struct os_event * ev){
     printf("{\"utime\": %lu,\"ccp\":[%llu,%llu],\"correction\":%lu,\"seq_num\":%d}\n", 
         os_cputime_ticks_to_usecs(os_cputime_get32()),
         frame->reception_timestamp,
-        (uint64_t)((((uint64_t)(frame->reception_timestamp) - (uint64_t)(previous_frame->reception_timestamp))*1.0/499.2e6/128.0)*1e6),
+        (uint64_t)((((uint64_t)(frame->reception_timestamp) - (uint64_t)(previous_frame->reception_timestamp))*DWT_TIME_UNITS)*1e6),
         *(uint32_t *)&frame->correction_factor,
         frame->seq_num
     );
@@ -250,7 +250,6 @@ static void ccp_postprocess(struct os_event * ev){
 static void 
 ccp_rx_complete_cb(dw1000_dev_instance_t * inst){
     dw1000_ccp_instance_t * ccp = inst->ccp;
-    ccp_frame_t * previous_frame = ccp->frames[(ccp->idx)%ccp->nframes]; 
     ccp_frame_t * frame = ccp->frames[(++ccp->idx)%ccp->nframes];
 
     ccp->status.valid |= ccp->idx > 1;
@@ -260,19 +259,6 @@ ccp_rx_complete_cb(dw1000_dev_instance_t * inst){
         int32_t tracking_interval = (int32_t) dw1000_read_reg(inst, RX_TTCKI_ID, 0, sizeof(int32_t));
         int32_t tracking_offset = (int32_t) dw1000_read_reg(inst, RX_TTCKO_ID, 0, sizeof(int32_t)) & RX_TTCKO_RXTOFS_MASK;
         frame->correction_factor = 1.0f + ((float)tracking_offset) / tracking_interval;
-#if MYNEWT_VAL(DW1000_TIME)
-        dw1000_time_instance_t * time = inst->time;
-        time->correction_factor = frame->correction_factor;
-        time->ccp_reception_timestamp = frame->reception_timestamp;
-        //Current rate of ccp packets in microseconds
-        //While the ticks comesback to 0, previous timestamp will be more than current timestamp
-        //So discard it
-        if(previous_frame->reception_timestamp > 0){
-        if(frame->reception_timestamp > previous_frame->reception_timestamp)
-            time->ccp_interval = (uint64_t)(((uint64_t)(frame->reception_timestamp - (uint64_t)previous_frame->reception_timestamp))*(1.0/499.2e6/128)*1e6); 
-        }
-        inst->time_ccp_rx_complete_cb(inst);
-#endif
         if (ccp->config.postprocess) 
             os_eventq_put(os_eventq_dflt_get(), &ccp_callout_postprocess.c_ev);
     }
