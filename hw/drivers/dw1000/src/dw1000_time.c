@@ -240,12 +240,13 @@ time_now(dw1000_dev_instance_t* inst){
     if((tracking_offset & 0x40000))
         tracking_offset = tracking_offset | 0xfff80000;
     //Calculate the ppm(Refer DW1000 User Manual for the formula)
-    int32_t ppm = tracking_interval/tracking_offset;
+    float ppm = ((tracking_offset*1e6)/tracking_interval);
     //Calculate the drift in usec
     //Formula drift in Hz = ppm * clock_frequency(Hz) * 1e-6
-    //Drift in usec = 1/(drift in Hz) * 1e6
-    int32_t drift = 1/(ppm * DWT_SYS_CLK_FRQ);
-    return time_relative(inst,drift);
+    //Drift in sec = 1/(drift in Hz)
+    float df_hz = ppm * DWT_SYS_CLK_FRQ * 1e-6;
+    float drift = 1/df_hz;
+    return ((uint64_t)((dw1000_read_systime(inst) + (drift/DWT_TIME_UNITS)))&0xFFFFFFFFFF);
 }
 
 
