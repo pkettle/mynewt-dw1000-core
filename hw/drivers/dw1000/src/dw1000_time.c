@@ -40,7 +40,6 @@
 static void time_postprocess(struct os_event * ev);
 static void time_ev_cb(struct os_event * ev);
 static struct os_callout time_callout_postprocess;
-static uint64_t usec_exp = 0;
 
 /*! 
  * @fn dw1000_time_init(dw1000_dev_instance_t * inst)
@@ -125,15 +124,7 @@ dw1000_time_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * time_pos
  */
 static void
 time_postprocess(struct os_event * ev){
-    assert(ev != NULL);
-    assert(ev->ev_arg != NULL);
-    dw1000_dev_instance_t * inst = (dw1000_dev_instance_t *)ev->ev_arg;
-    dw1000_time_instance_t * time = inst->time;
-    
-    uint32_t delay = time->slot_id * MYNEWT_VAL(TDMA_DELTA)/MYNEWT_VAL(TDMA_NSLOTS);
-    //Calculate the transmission timestamp using the CCP reception timestamp
-    time->transmission_timestamp = time_absolute(inst, time->ccp_reception_timestamp, delay);
-    time->status.ccp_packet_received = true;
+    printf("Default implementation : Replace with a transmission timestamp calculation algo \n");
 }
 
 /*!
@@ -163,18 +154,20 @@ time_ev_cb(struct os_event *ev){
     
     time->correction_factor = frame->correction_factor;
     time->ccp_reception_timestamp = frame->reception_timestamp;
+    uint64_t temp = 0;
 
     //Current rate of ccp packets in microseconds
-    if(previous_frame->reception_timestamp > 0){
-        uint64_t temp = 0;
+    if(frame->seq_num == (uint8_t)(previous_frame->seq_num+1)){
         if(frame->reception_timestamp > previous_frame->reception_timestamp)
             temp = (uint64_t)((frame->reception_timestamp - previous_frame->reception_timestamp)*DWT_TIME_UNITS*1e6);
         else //When wrap around happens
             temp = (uint64_t)(((0xFFFFFFFFFF - previous_frame->reception_timestamp) + frame->reception_timestamp)*DWT_TIME_UNITS*1e6);
         time->ccp_interval = temp>0?temp:time->ccp_interval;
     }
-    if (time->config.postprocess)
+    if (time->config.postprocess && temp > 0)
         os_eventq_put(os_eventq_dflt_get(), &time_callout_postprocess.c_ev);
+    else
+        dw1000_restart_rx(inst, inst->control);
 }
 
 /*! 
@@ -193,7 +186,7 @@ time_ev_cb(struct os_event *ev){
  */
 uint64_t
 time_relative(dw1000_dev_instance_t* inst, uint32_t delay){
-   return time_absolute(inst, dw1000_read_systime(inst), delay);
+   return time_absolute(inst, time_now(inst), delay);
 }
 
 /*! 
@@ -233,39 +226,18 @@ time_absolute(dw1000_dev_instance_t* inst, uint64_t epoch, uint32_t delay){
  */
 uint64_t
 time_now(dw1000_dev_instance_t* inst){
-    int32_t tracking_interval = (int32_t) dw1000_read_reg(inst, RX_TTCKI_ID, 0, sizeof(int32_t));
-    int32_t tracking_offset = (int32_t) dw1000_read_reg(inst, RX_TTCKO_ID, 0, sizeof(int32_t)) & RX_TTCKO_RXTOFS_MASK;
-    //The tracking offset is a signed integer value with a length of 19bits
-    //So extend the signed bits to fetch it as signed decimal if its 19th bit is 1
-    if((tracking_offset & 0x40000))
-        tracking_offset = tracking_offset | 0xfff80000;
-    //Calculate the ppm(Refer DW1000 User Manual for the formula)
-    float ppm = ((tracking_offset*1e6)/tracking_interval);
-    //Calculate the drift in usec
-    //Formula drift in Hz = ppm * clock_frequency(Hz) * 1e-6
-    //Drift in sec = 1/(drift in Hz)
-    float df_hz = ppm * DWT_SYS_CLK_FRQ * 1e-6;
-    float drift = 1/df_hz;
-    return ((uint64_t)((dw1000_read_systime(inst) + (drift/DWT_TIME_UNITS)))&0xFFFFFFFFFF);
-}
-
-
-bool check_time(dw1000_dev_instance_t* inst){
-    bool status = false;
-    dw1000_time_instance_t* time = inst->time;
-    uint64_t delta = MYNEWT_VAL(TDMA_DELTA);
-    uint32_t  nslots = MYNEWT_VAL(TDMA_NSLOTS);
-
-    if(time->status.ccp_packet_received == true){
-        usec_exp = os_cputime_ticks_to_usecs(os_cputime_get32());
-        time->status.ccp_packet_received = false;
-        status = true;
-    }else if(time->ccp_interval < ((os_cputime_ticks_to_usecs(os_cputime_get32()))-usec_exp)){
-        usec_exp = os_cputime_ticks_to_usecs(os_cputime_get32());
-        uint32_t delay = time->slot_id * delta / nslots;
-        time->transmission_timestamp = time_relative(inst, delay);
-        status = true;
+    assert(inst!=NULL);
+    uint32_t ccp_period_actual = MYNEWT_VAL(CCP_PERIOD);
+    dw1000_time_instance_t *time = inst->time;
+    //Drift is expected timeperiod - actual timeperiod
+    if(ccp_period_actual < time->ccp_interval){
+        uint64_t guard_time = (inst->slot_id*(time->ccp_interval - ccp_period_actual))/MYNEWT_VAL(TDMA_NSLOTS);
+        return ((uint64_t)((dw1000_read_systime(inst) - (uint64_t)(guard_time/DWT_TIME_UNITS/1e6)))&0xFFFFFFFFFF);
     }
-    return status;
+    else{
+        uint64_t guard_time = (inst->slot_id*(ccp_period_actual - time->ccp_interval))/MYNEWT_VAL(TDMA_NSLOTS);
+        return ((uint64_t)((dw1000_read_systime(inst) + (uint64_t)(guard_time/DWT_TIME_UNITS/1e6)))&0xFFFFFFFFFF);
+    }
 }
+
 #endif // DW1000_TIME

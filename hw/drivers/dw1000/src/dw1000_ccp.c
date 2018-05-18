@@ -259,9 +259,12 @@ ccp_rx_complete_cb(dw1000_dev_instance_t * inst){
         int32_t tracking_interval = (int32_t) dw1000_read_reg(inst, RX_TTCKI_ID, 0, sizeof(int32_t));
         int32_t tracking_offset = (int32_t) dw1000_read_reg(inst, RX_TTCKO_ID, 0, sizeof(int32_t)) & RX_TTCKO_RXTOFS_MASK;
         frame->correction_factor = 1.0f + ((float)tracking_offset) / tracking_interval;
-        if (ccp->config.postprocess) 
-            os_eventq_put(os_eventq_dflt_get(), &ccp_callout_postprocess.c_ev);
+    }else{
+        dw1000_read_rx(inst, frame->array, 0, sizeof(ieee_blink_frame_t));
+        frame->reception_timestamp = dw1000_read_rxtime(inst); 
     }
+    if (ccp->config.postprocess) 
+        os_eventq_put(os_eventq_dflt_get(), &ccp_callout_postprocess.c_ev);
 }
 
 
