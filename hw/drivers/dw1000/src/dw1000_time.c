@@ -40,7 +40,8 @@
 static void time_postprocess(struct os_event * ev);
 static void time_ev_cb(struct os_event * ev);
 static struct os_callout time_callout_postprocess;
-
+static struct os_callout tdma_callout;
+static void ccp_miss_cb(struct os_event *ev);
 /*! 
  * @fn dw1000_time_init(dw1000_dev_instance_t * inst)
  *
@@ -69,6 +70,8 @@ dw1000_time_instance_t * dw1000_time_init(dw1000_dev_instance_t * inst, uint16_t
     dw1000_time_set_postprocess(inst, &time_postprocess);
     dw1000_ccp_set_postprocess(inst, &time_ev_cb);
     dw1000_time_set_callbacks(inst, NULL);
+    //CCP miss watchdog
+    os_callout_init(&tdma_callout, os_eventq_dflt_get(), ccp_miss_cb, inst);
     inst->time->status.initialized = 1;
     return inst->time;
 }
@@ -148,7 +151,8 @@ time_ev_cb(struct os_event *ev){
     dw1000_dev_instance_t *inst = (dw1000_dev_instance_t *)ev->ev_arg;
     dw1000_time_instance_t *time = inst->time;
     dw1000_ccp_instance_t *ccp = inst->ccp;
-    
+    //You have received a new CCP packet. So stop it while processing it
+    os_callout_stop(&tdma_callout);
     ccp_frame_t * previous_frame = ccp->frames[(ccp->idx-1)%ccp->nframes];
     ccp_frame_t * frame = ccp->frames[ccp->idx%ccp->nframes];
     
@@ -168,6 +172,11 @@ time_ev_cb(struct os_event *ev){
         os_eventq_put(os_eventq_dflt_get(), &time_callout_postprocess.c_ev);
     else
         dw1000_restart_rx(inst, inst->control);
+    //Your processing is complete. So start the timer again so that it will catch next CCP miss
+    //Wait an extra slot duration to make sure that the CCP packet is actually missed.
+    //This will be common across all the tags & nodes
+    //This is done becoz the timer task is not accurate and the granularity is pretty small. So it tends to kick in before the actual CCP packet arives everytime
+    os_callout_reset(&tdma_callout, OS_TICKS_PER_SEC*(inst->time->ccp_interval + MYNEWT_VAL(TDMA_DELTA)/MYNEWT_VAL(TDMA_NSLOTS))*1e-6);
 }
 
 /*! 
@@ -240,4 +249,21 @@ time_now(dw1000_dev_instance_t* inst){
     }
 }
 
+static void
+ccp_miss_cb(struct os_event *ev){
+    assert(ev != NULL);
+    assert(ev->ev_arg != NULL);
+    printf("Packet mssed \n");
+    dw1000_dev_instance_t * inst = (dw1000_dev_instance_t *)ev->ev_arg;
+    //The receiver was turned on waiting for the CCP packet to come
+    //So first switch it off and then send the range request
+    dw1000_phy_forcetrxoff(inst);
+    //Wait an extra slot duration to make sure that the CCP packet is actually missed.
+    //This will be common across all the tags & nodes
+    //This is done becoz the timer task is not accurate and the granularity is pretty small. So it tends to kick in before the actual CCP packet arives everytime
+    os_callout_reset(&tdma_callout, OS_TICKS_PER_SEC*(inst->time->ccp_interval + MYNEWT_VAL(TDMA_DELTA)/MYNEWT_VAL(TDMA_NSLOTS))*1e-6);
+    //calculate an imaginary reception timestamp which could be like previous good reception timestamp + n*the os_callout wait time, where n is the no of times packets has been missed
+    inst->time->ccp_reception_timestamp = time_absolute(inst,inst->time->ccp_reception_timestamp,(inst->time->ccp_interval+ MYNEWT_VAL(TDMA_DELTA)/MYNEWT_VAL(TDMA_NSLOTS)));
+    os_eventq_put(os_eventq_dflt_get(), &time_callout_postprocess.c_ev);
+}
 #endif // DW1000_TIME

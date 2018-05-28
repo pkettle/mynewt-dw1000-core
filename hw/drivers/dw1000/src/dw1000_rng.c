@@ -120,7 +120,6 @@ dw1000_dev_status_t
 dw1000_rng_request(dw1000_dev_instance_t * inst, uint16_t dst_address, dw1000_rng_modes_t code){
 
     // This function executes on the device that initiates a request 
-    
     os_error_t err = os_sem_pend(&inst->rng->sem,  OS_TIMEOUT_NEVER);
     assert(err == OS_OK);
     
@@ -140,8 +139,11 @@ dw1000_rng_request(dw1000_dev_instance_t * inst, uint16_t dst_address, dw1000_rn
     if (rng->control.delay_start_enabled) 
         dw1000_set_delay_start(inst, rng->delay_start_until);   
     dw1000_start_tx(inst);
+    if(inst->status.start_tx_error){
+        os_sem_release(&inst->rng->sem);
+    }
     
-    err = os_sem_pend(&inst->rng->sem, OS_TIMEOUT_NEVER); // Wait for completion of transactions 
+    err = os_sem_pend(&inst->rng->sem,OS_TIMEOUT_NEVER);  // Wait for completion of transactions
     os_sem_release(&inst->rng->sem);
     
    return inst->status;
@@ -296,7 +298,6 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
         // CCP Packet Received
         uint64_t clock_master;
         dw1000_read_rx(inst, (uint8_t *) &clock_master, offsetof(ieee_blink_frame_t,long_address), sizeof(uint64_t));    
-       
         if (inst->ccp_rx_complete_cb != NULL && inst->clock_master == clock_master)
             inst->ccp_rx_complete_cb(inst);
 #if MYNEWT_VAL(DW1000_TIME)
@@ -317,7 +318,7 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
             inst->pan_rx_complete_cb(inst);     
         if (dw1000_restart_rx(inst, control).start_rx_error)  
             inst->rng_rx_error_cb(inst);          
-        return;  
+        return;
 #endif
     }
 
@@ -327,7 +328,13 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
     }else{
         // Unrecognized range request, kicking external
         if (inst->rng_interface_extension_cb != NULL)
-            inst->rng_interface_extension_cb(inst); 
+            inst->rng_interface_extension_cb(inst);
+        else{
+            //To free the Semaphore
+            inst->rng_rx_error_cb(inst);
+            inst->control = inst->control_rx_context;
+            dw1000_restart_rx(inst, control);
+        }
         return;
     }
 
@@ -679,7 +686,7 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
                 }
             break;
 #endif //DS_TWR_EXT_ENABLE
-        default: 
+        default:
             // Use this callback to extend interface and ranging services
             if (inst->rng_interface_extension_cb != NULL)
                 inst->rng_interface_extension_cb(inst);
