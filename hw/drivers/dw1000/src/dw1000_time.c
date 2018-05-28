@@ -253,7 +253,7 @@ static void
 ccp_miss_cb(struct os_event *ev){
     assert(ev != NULL);
     assert(ev->ev_arg != NULL);
-    printf("Packet mssed \n");
+    //printf("Packet mssed \n");
     dw1000_dev_instance_t * inst = (dw1000_dev_instance_t *)ev->ev_arg;
     //The receiver was turned on waiting for the CCP packet to come
     //So first switch it off and then send the range request
