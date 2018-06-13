@@ -300,17 +300,9 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
         dw1000_read_rx(inst, (uint8_t *) &clock_master, offsetof(ieee_blink_frame_t,long_address), sizeof(uint64_t));    
         if (inst->ccp_rx_complete_cb != NULL && inst->clock_master == clock_master)
             inst->ccp_rx_complete_cb(inst);
-#if MYNEWT_VAL(DW1000_TIME)
-        //If TDMA based ranging is enabled then the device should not go to receive mode again
-        //as it needs to range.So the application will take care of going to receive mode or tx mode
-        if(inst->rng->sem.sem_tokens <= 0)
-		os_sem_release(&inst->rng->sem);
-        return;
-#else
         if (dw1000_restart_rx(inst, control).start_rx_error)
             inst->rng_rx_error_cb(inst);
         return;
-#endif //DW1000_TIME
 #endif //CCP
     }
     else if (inst->fctrl_array[0] == FCNTL_IEEE_BLINK_TAG_64){ 
