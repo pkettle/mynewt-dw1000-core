@@ -26,7 +26,6 @@
 #include <hal/hal_spi.h>
 #include <hal/hal_gpio.h>
 #include "bsp/bsp.h"
-
 #include <dw1000/dw1000_regs.h>
 #include <dw1000/dw1000_dev.h>
 #include <dw1000/dw1000_hal.h>
@@ -450,7 +449,6 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
                 case DWT_SS_TWR:
                     {
                         // This code executes on the device that is responding to a request
-                        // printf("DWT_SS_TWR\n");
                         dw1000_rng_instance_t * rng = inst->rng; 
                         twr_frame_t * frame = rng->frames[(++rng->idx)%rng->nframes];
                         if (inst->frame_len >= sizeof(ieee_rng_request_frame_t))
@@ -538,6 +536,11 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
                         {
                             // This code executes on the device that is responding to a original request
                             // printf("DWT_DS_TWR\n");
+#if MYNEWT_VAL(DW1000_LOG)
+                           LOG_DEBUG(&inst->os_debug_log, LOG_MODULE_DEFAULT,"DWT_DS_TWR\n");
+#endif
+
+                            // printf("DWT_DS_TWR\n");
                             dw1000_rng_instance_t * rng = inst->rng; 
                             twr_frame_t * frame = rng->frames[(++rng->idx)%rng->nframes];
                             if (inst->frame_len >= sizeof(ieee_rng_request_frame_t))
@@ -563,7 +566,10 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
                             dw1000_set_rx_timeout(inst, config->rx_timeout_period); 
 
                             if (dw1000_start_tx(inst).start_tx_error)
+                                {
+                                LOG_ERROR(&inst->os_error_log, LOG_MODULE_DEFAULT,"start_tx_error\n");
                                 os_sem_release(&rng->sem);
+                                }
                             break;
                         }
                     case DWT_DS_TWR_T1:
@@ -571,6 +577,9 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
                             // This code executes on the device that initiated the original request, and is now preparing the next series of timestamps
                             // The 1st frame now contains a local copy of the initial first side of the double sided scheme. 
                             // printf("DWT_DS_TWR_T1\n");
+#if MYNEWT_VAL(DW1000_LOG)
+                           LOG_DEBUG(&inst->os_debug_log, LOG_MODULE_DEFAULT,"DWT_DS_TWR_T1\n");
+#endif
                             dw1000_rng_instance_t * rng = inst->rng; 
                             twr_frame_t * frame = rng->frames[(rng->idx)%rng->nframes];
                             twr_frame_t * next_frame = rng->frames[(++rng->idx)%rng->nframes];
@@ -626,6 +635,9 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
                         {
                             // This code executes on the device that responded to the original request, and is now preparing the final timestamps
                             // printf("DWT_SDS_TWR_T2\n");
+#if MYNEWT_VAL(DW1000_LOG)
+                           LOG_DEBUG(&inst->os_debug_log, LOG_MODULE_DEFAULT,"DWT_DS_TWR_T2\n");
+#endif
                             dw1000_rng_instance_t * rng = inst->rng; 
                             twr_frame_t * previous_frame = rng->frames[(rng->idx)%rng->nframes];
                             twr_frame_t * frame = rng->frames[(++rng->idx)%rng->nframes];
@@ -648,7 +660,10 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
                             dw1000_write_tx_fctrl(inst, sizeof(twr_frame_final_t), 0, true); 
 
                             if (dw1000_start_tx(inst).start_tx_error)
-                                os_sem_release(&rng->sem);  
+                            {
+                                LOG_ERROR(&inst->os_error_log, LOG_MODULE_DEFAULT,"start_tx_error\n");
+                                os_sem_release(&rng->sem);
+                            }
                             break;
                         }
                     case  DWT_DS_TWR_FINAL:
@@ -656,6 +671,9 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
                             // This code executes on the device that initialed the original request, and has now receive the final response timestamp. 
                             // This marks the completion of the double-single-two-way request. 
                             // printf("DWT_SDS_TWR_FINAL\n");
+#if MYNEWT_VAL(DW1000_LOG)
+                           LOG_DEBUG(&inst->os_debug_log, LOG_MODULE_DEFAULT,"DWT_DS_TWR\n");
+#endif
                             dw1000_rng_instance_t * rng = inst->rng; 
                             twr_frame_t * frame = rng->frames[(rng->idx)%rng->nframes];
                             if (inst->frame_len >= sizeof(twr_frame_final_t))

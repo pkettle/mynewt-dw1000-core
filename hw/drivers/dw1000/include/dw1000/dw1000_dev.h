@@ -33,7 +33,9 @@ extern "C" {
 #include <os/os_mutex.h>
 #include <hal/hal_spi.h>
 #include <dw1000/dw1000_regs.h>
-
+#if MYNEWT_VAL(DW1000_LOG)
+#include <log/log.h>
+#endif
 #define DWT_DEVICE_ID   (0xDECA0130) 
 #define DWT_SUCCESS (0)
 #define DWT_ERROR   (-1)
@@ -214,6 +216,11 @@ typedef struct _dw1000_dev_instance_t{
     struct os_eventq interrupt_eventq;
     struct os_event interrupt_ev;
     struct os_task interrupt_task_str;
+#if MYNEWT_VAL(DW1000_LOG)
+    struct log os_log;
+    struct log os_debug_log;
+    struct log os_error_log;
+#endif    
     uint8_t interrupt_task_prio;
     os_stack_t interrupt_task_stack[DW1000_DEV_TASK_STACK_SZ]
         __attribute__((aligned(OS_STACK_ALIGNMENT)));
