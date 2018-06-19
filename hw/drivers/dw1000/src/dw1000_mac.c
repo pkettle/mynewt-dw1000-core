@@ -301,6 +301,12 @@ dw1000_dev_status_t dw1000_mac_init(dw1000_dev_instance_t * inst, dwt_config_t *
     dw1000_write_reg(inst, SYS_CTRL_ID, SYS_CTRL_OFFSET, SYS_CTRL_TXSTRT | SYS_CTRL_TRXOFF, sizeof(uint8_t)); // Request TX start and TRX off at the same time
     dw1000_tasks_init(inst);
 
+#if MYNEWT_VAL(DW1000_MAC_FILTERING)
+    if(inst->config.framefilter_enabled){
+        dw1000_mac_framefilter(inst, DWT_FF_BEACON_EN | DWT_FF_DATA_EN );
+    }
+#endif
+    
     return inst->status;
 } 
 
@@ -497,6 +503,8 @@ dw1000_dev_status_t dw1000_start_rx(dw1000_dev_instance_t * inst)
         inst->status.start_rx_error = (sys_status_reg & (SYS_STATUS_HPDWARN >> 24)) != 0;   
         if (inst->status.start_rx_error){   // if delay has passed do immediate RX on unless DWT_IDLE_ON_DLY_ERR is true
             dw1000_phy_forcetrxoff(inst);   // turn the delayed receive off
+            if (inst->control.delay_start_enabled) 
+                inst->sys_ctrl_reg &= ~SYS_CTRL_RXDLYE;
             dw1000_write_reg(inst, SYS_CTRL_ID, SYS_CTRL_OFFSET, inst->sys_ctrl_reg, sizeof(uint16_t)); // turn on receiver        
         }
     }else
@@ -545,6 +553,8 @@ dw1000_dev_status_t dw1000_restart_rx(dw1000_dev_instance_t * inst, dw1000_dev_c
         inst->status.start_rx_error = (sys_status_reg & (SYS_STATUS_HPDWARN >> 24)) != 0;   
         if (inst->status.start_rx_error){   // if delay has passed do immediate RX on unless DWT_IDLE_ON_DLY_ERR is true
             dw1000_phy_forcetrxoff(inst);   // turn the delayed receive off
+            if (inst->control.delay_start_enabled) 
+                inst->sys_ctrl_reg &= ~SYS_CTRL_RXDLYE;
             dw1000_write_reg(inst, SYS_CTRL_ID, SYS_CTRL_OFFSET, inst->sys_ctrl_reg, sizeof(uint16_t)); // turn on receiver
         }
     }else
@@ -1010,7 +1020,7 @@ static void dw1000_interrupt_ev_cb(struct os_event *ev)
 
     // Handle TX confirmation event
     if(inst->sys_status & SYS_STATUS_TXFRS){
-        //printf("SYS_STATUS_TXFRS %08lX\n", inst->sys_status);
+        // printf("SYS_STATUS_TXFRS %08lX\n", inst->sys_status);
         dw1000_write_reg(inst, SYS_STATUS_ID, 0, SYS_STATUS_ALL_TX, sizeof(uint32_t)); // Clear TX event bits
 
         // In the case where this TXFRS interrupt is due to the automatic transmission of an ACK solicited by a response (with ACK request bit set)
@@ -1034,7 +1044,7 @@ static void dw1000_interrupt_ev_cb(struct os_event *ev)
 
     // Handle RX good frame event
     if(inst->sys_status & SYS_STATUS_RXFCG){
-        //printf("SYS_STATUS_RXFCG %08lX\n", inst->sys_status);
+        // printf("SYS_STATUS_RXFCG %08lX\n", inst->sys_status);
         dw1000_write_reg(inst, SYS_STATUS_ID, 0, SYS_STATUS_ALL_RX_GOOD, sizeof(uint32_t));     // Clear all receive status bits
         uint16_t finfo = dw1000_read_reg(inst, RX_FINFO_ID, RX_FINFO_OFFSET, sizeof(uint16_t)); // Read frame info - Only the first two bytes of the register are used here.
         inst->frame_len = (finfo & RX_FINFO_RXFL_MASK_1023) - 2;          // Report frame length - Standard frame length up to 127, extended frame length up to 1023 bytes
@@ -1088,7 +1098,7 @@ static void dw1000_interrupt_ev_cb(struct os_event *ev)
     // Handle RX errors events
     inst->status.rx_error = (inst->sys_status & SYS_STATUS_ALL_RX_ERR) !=0 ;
     if(inst->status.rx_error){
-        //printf("SYS_STATUS_ALL_RX_ERR %08lX\n", inst->sys_status);
+        // printf("SYS_STATUS_ALL_RX_ERR %08lX\n", inst->sys_status);
         dw1000_write_reg(inst, SYS_STATUS_ID, 0, SYS_STATUS_ALL_RX_ERR, sizeof(uint32_t)); // Clear RX error event bits
         // Because of an issue with receiver restart after error conditions, an RX reset must be applied after any error or timeout event to ensure
         // the next good frame's timestamp is computed correctly.

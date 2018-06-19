@@ -72,6 +72,8 @@ typedef enum _dw1000_rng_modes_t{
     DWT_DS_TWR_EXT_T2,
     DWT_DS_TWR_EXT_FINAL,
     DWT_DS_TWR_EXT_END,
+    DWT_PROVISION_START,
+    DWT_PROVISION_RESP,
 }dw1000_rng_modes_t;
 
 typedef struct _dw1000_rng_status_t{
@@ -125,7 +127,7 @@ typedef struct{
 typedef struct _dw1000_rng_instance_t{
     struct _dw1000_dev_instance_t * dev;
     struct os_sem sem;
-    uint64_t delay_start_until;
+    uint64_t delay;
     dw1000_rng_config_t * config;
     dw1000_rng_control_t control;
     dw1000_rng_status_t status;
@@ -142,12 +144,16 @@ void dw1000_rng_set_callbacks_extension(dw1000_dev_instance_t * inst,  dw1000_de
 dw1000_dev_status_t dw1000_rng_request(dw1000_dev_instance_t * inst, uint16_t dst_address, dw1000_rng_modes_t protocal);
 dw1000_dev_status_t dw1000_rng_request_delay_start(dw1000_dev_instance_t * inst, uint16_t dst_address, uint64_t delay, dw1000_rng_modes_t protocal);
 void dw1000_rng_set_frames(dw1000_dev_instance_t * inst, twr_frame_t twr[], uint16_t nframes);
+#if MYNEWT_VAL(DW1000_RANGE)
+float dw1000_rng_twr_to_tof(twr_frame_t *fframe, twr_frame_t *nframe);
+#else
 float dw1000_rng_twr_to_tof(dw1000_rng_instance_t * rng);
+#endif
 uint32_t dw1000_rng_twr_to_tof_sym(twr_frame_t twr[], dw1000_rng_modes_t code);
 
 #define dw1000_rng_tof_to_meters(ToF) (float)(ToF * 299792458 * (1.0/499.2e6/128.0)) 
 #define dw1000_rng_set_interface_extension_cb(inst, cb) inst->rng_interface_extension_cb = cb 
-#define dw1000_rng_rx_timeout_extension_cb(inst, rcb) inst->rng_rx_timeout_extension_cb = cb 
+#define dw1000_rng_set_rx_timeout_extension_cb(inst, cb) inst->rng_rx_timeout_extension_cb = cb 
 #define dw1000_rng_set_error_extension_cb(inst, cb) inst->rng_rx_error_extension_cb = cb
 #define dw1000_rng_set_tx_final_cb(inst, cb) inst->rng_tx_final_cb = cb 
 #define dw1000_rng_set_complete_cb(inst, cb) inst->rng_complete_cb = cb 

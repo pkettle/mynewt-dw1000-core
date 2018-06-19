@@ -91,10 +91,10 @@ syscfg.defs:
         value: 4000
     DW1000_DEVICE_0_TX_ANT_DLY:
         description: 'TX_ANT_DLY'
-        value: 0x4050
+        value: 0x3FF0
     DW1000_DEVICE_0_RX_ANT_DLY:
         description: 'RX_ANT_DLY'
-        value: 0x4050
+        value: 0x3FF0
 
     DW1000_DEVICE_1:
         description: '2nd DW1000 Device Enable'
@@ -113,18 +113,18 @@ syscfg.defs:
         value:  42
     DW1000_DEVICE_1_TX_ANT_DLY:
         description: 'TX_ANT_DLY'
-        value: 0x4050
+        value: 0x3FF0
     DW1000_DEVICE_1_RX_ANT_DLY:
         description: 'RX_ANT_DLY'
-        value: 0x4050
+        value: 0x3FF0
         
-    DW1000_AOA_SYNC_EN:
+    DW1000_PDOA_SYNC_EN:
         description: 'Sync Enable Pin P1.13, 32+13'
         value: 45
-    DW1000_AOA_SYNC_CLR:
+    DW1000_PDOA_SYNC_CLR:
         description: 'Sync Clear Pin P1.14, 32+14'
         value: 46
-    DW1000_AOA_SYNC:
+    DW1000_PDOA_SYNC:
         description: 'Sync Pin P1.15, 32+15'
         value: 47
 

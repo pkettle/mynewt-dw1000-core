@@ -24,6 +24,15 @@ syscfg.defs:
     DW1000_PAN:
         description: 'Private Area Network functionality'
         value: 0
+    DW1000_MAC_FILTERING:
+        description: 'Enable the mac filtering'
+        value: 0
+    DW1000_PROVISION:
+        description: 'Enable independent provision module'
+        value:  0
+    DW1000_RANGE:
+        description: 'TWR Ranging functionality'
+        value:  0
     LOCAL_COORDINATE_X:
         description: >
             Default Anchor X Coordinate  
@@ -31,12 +40,10 @@ syscfg.defs:
     DW1000_RNG_INDICATE_LED:
         description: 'Toggle LED_1 for every range packet received'
         value: 0
-
     LOCAL_COORDINATE_Y:
         description: >
             Default Anchor Y Coordinate  
         value: ((float){0.0f})
-        
     LOCAL_COORDINATE_Z:
         description: >
             Default Anchor Z Coordinate  
@@ -52,11 +59,19 @@ syscfg.defs:
     CCP_PERIOD:
         description: >
             Clock Calibration Packets Period 
-        value: ((uint32_t){0x020000})
+        value: ((uint32_t){0x200000})
     PAN_PERIOD:
         description: >
             PAN Discovery Packets Period 
         value: ((uint32_t){0x200000})
+    RANGE_PERIOD:
+        description: >
+            Ranging period
+        value: ((uint32_t){0x3000})
+    PROVISION_PERIOD:
+        description: >
+            Provision packet period(in ms)
+        value: ((uint32_t){100})
     OS_LATENCY:
         description: >
             OS Latency Guardband 
