@@ -121,16 +121,18 @@ typedef struct _dw1000_dev_rxdiag_t{
     uint16_t    preamble_cnt;       // Count of preamble symbols accumulated
     uint16_t    max_growth_cir;     // Channel Impulse Response max growth CIR
 } dw1000_dev_rxdiag_t;
-struct _dw1000_dev_instance_t ;
+
 
 #if MYNEWT_VAL(DW1000_EXTENSION_API)
+struct _dw1000_dev_instance_t;
+typedef struct _dw1000_extension_callback_t dw1000_extension_callbacks_t;
 typedef struct _dw1000_extension_callback_t{
     void (* tx_complete_cb) (struct _dw1000_dev_instance_t *);
     void (* rx_complete_cb) (struct _dw1000_dev_instance_t *);
     void (* rx_timeout_cb)  (struct _dw1000_dev_instance_t *);
     void (* rx_error_cb)    (struct _dw1000_dev_instance_t *);
-    struct _dw1000_extension_callbacks_t *next;
-    struct _dw1000_extension_callbacks_t *previous;
+    dw1000_extension_callbacks_t * next;
+    dw1000_extension_callbacks_t * previous;
 }dw1000_extension_callbacks_t;
 #endif
 

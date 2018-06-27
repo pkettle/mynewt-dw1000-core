@@ -317,13 +317,11 @@ provision_rx_complete_ext_cb(dw1000_dev_instance_t * inst){
     {
         if(inst->extension_cb->next != NULL)
         {
-            inst->extension_cb->rx_complete_cb(inst);
-            //inst->extension_cb->next->rx_complete_cb(inst);
+            inst->extension_cb->next->rx_complete_cb(inst);
         }
         else
         {
-            if (dw1000_restart_rx(inst, control).start_rx_error)
-                inst->provision_rx_error_cb(inst);
+            dw1000_restart_rx(inst, control);
         }
     }
 }
@@ -369,12 +367,11 @@ provision_rx_timeout_ext_cb(dw1000_dev_instance_t * inst){
     {
         if(inst->extension_cb->next != NULL)
         {
-            inst->extension_cb->rx_timeout_cb(inst);
+            inst->extension_cb->next->rx_timeout_cb(inst);
         }
         else
         {
-            if (dw1000_restart_rx(inst, control).start_rx_error)
-                inst->provision_rx_error_cb(inst);
+            dw1000_restart_rx(inst, control);
         }
     }
 
@@ -417,12 +414,11 @@ provision_rx_error_ext_cb(dw1000_dev_instance_t * inst){
     {
         if(inst->extension_cb->next != NULL)
         {
-            inst->extension_cb->rx_timeout_cb(inst);
+            inst->extension_cb->next->rx_timeout_cb(inst);
         }
         else
         {
-            if (dw1000_restart_rx(inst, control).start_rx_error)
-                inst->provision_rx_error_cb(inst);
+            dw1000_restart_rx(inst, control);
         }
     }
 }
@@ -448,7 +444,10 @@ provision_tx_complete_cb(dw1000_dev_instance_t * inst){
 #if MYNEWT_VAL(DW1000_EXTENSION_API)
 static void
 provision_tx_complete_ext_cb(dw1000_dev_instance_t * inst){
-    //place holder
+    if(inst->fctrl == FCNTL_IEEE_PROVISION_16)
+        provision_tx_complete_cb(inst);
+    else if(inst->extension_cb->next != NULL)
+        inst->extension_cb->next->tx_complete_cb(inst);
 }
 #endif
 
