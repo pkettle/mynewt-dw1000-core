@@ -391,9 +391,12 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
 #if MYNEWT_VAL(DW1000_PAN)
         // PAN Discovery Packet Received
         if (inst->pan_rx_complete_cb != NULL)
-            inst->pan_rx_complete_cb(inst);     
+            inst->pan_rx_complete_cb(inst);
+#if 0 
         if (dw1000_restart_rx(inst, control).start_rx_error)  
             inst->rng_rx_error_cb(inst);          
+
+#endif
         return;  
 #endif
     }

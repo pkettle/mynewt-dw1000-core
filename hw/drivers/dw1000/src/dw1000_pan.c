@@ -212,6 +212,7 @@ pan_postprocess(struct os_event * ev){
     assert(ev->ev_arg != NULL);
     dw1000_dev_instance_t * inst = (dw1000_dev_instance_t *)ev->ev_arg;
     dw1000_pan_instance_t * pan = inst->pan; 
+   dw1000_dev_control_t control = inst->control_rx_context;
     pan_frame_t * frame = pan->frames[(pan->idx)%pan->nframes]; 
   
     if(pan->status.valid && frame->long_address == inst->my_long_address)
@@ -236,6 +237,8 @@ pan_postprocess(struct os_event * ev){
             frame->pan_id,
             frame->slot_id
         );
+   if (dw1000_restart_rx(inst, control).start_rx_error)
+        inst->rng_rx_error_cb(inst);
 }
 
 /*! 
