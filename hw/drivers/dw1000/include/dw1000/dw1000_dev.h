@@ -121,7 +121,18 @@ typedef struct _dw1000_dev_rxdiag_t{
     uint16_t    preamble_cnt;       // Count of preamble symbols accumulated
     uint16_t    max_growth_cir;     // Channel Impulse Response max growth CIR
 } dw1000_dev_rxdiag_t;
+struct _dw1000_dev_instance_t ;
 
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
+typedef struct _dw1000_extension_callback_t{
+    void (* tx_complete_cb) (struct _dw1000_dev_instance_t *);
+    void (* rx_complete_cb) (struct _dw1000_dev_instance_t *);
+    void (* rx_timeout_cb)  (struct _dw1000_dev_instance_t *);
+    void (* rx_error_cb)    (struct _dw1000_dev_instance_t *);
+    struct _dw1000_extension_callbacks_t *next;
+    struct _dw1000_extension_callbacks_t *previous;
+}dw1000_extension_callbacks_t;
+#endif
 
 typedef struct _dw1000_dev_instance_t{
     struct os_dev uwb_dev;     /** Has to be here for cast in create_dev to work */
@@ -147,7 +158,9 @@ typedef struct _dw1000_dev_instance_t{
     void (* rng_tx_final_cb) (struct _dw1000_dev_instance_t *);
     void (* rng_interface_extension_cb) (struct _dw1000_dev_instance_t *);
     void (* rng_complete_cb) (struct _dw1000_dev_instance_t *);
-  
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
+    dw1000_extension_callbacks_t * extension_cb;
+#endif
 #if MYNEWT_VAL(DW1000_LWIP)
     void (* lwip_tx_complete_cb) (struct _dw1000_dev_instance_t *);
     void (* lwip_rx_complete_cb) (struct _dw1000_dev_instance_t *);

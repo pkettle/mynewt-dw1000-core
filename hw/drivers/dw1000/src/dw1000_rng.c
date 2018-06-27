@@ -143,7 +143,7 @@ dw1000_rng_request(dw1000_dev_instance_t * inst, uint16_t dst_address, dw1000_rn
     dw1000_set_wait4resp(inst, true);    
     dw1000_set_rx_timeout(inst, config->rx_timeout_period); 
     if (rng->control.delay_start_enabled) 
-        dw1000_set_delay_start(inst, rng->delay);   
+        dw1000_set_delay_start(inst, rng->delay);
 #if MYNEWT_VAL(DW1000_RANGE)
     if (dw1000_start_tx(inst).start_tx_error){
         assert(inst->range_error_cb != NULL);
@@ -324,7 +324,6 @@ rng_rx_timeout_cb(dw1000_dev_instance_t * inst){
             inst->pan_rx_timeout_cb(inst);
 #endif
     }
- 
 #if MYNEWT_VAL(DW1000_PROVISION)
     if(inst->provision != NULL){
         if(inst->provision->status.valid == true){
@@ -374,7 +373,7 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
     uint16_t code, dst_address; 
     dw1000_rng_config_t * config = inst->rng->config;
     dw1000_dev_control_t control = inst->control_rx_context;
-
+#if 0
     if (inst->fctrl_array[0] == FCNTL_IEEE_BLINK_CCP_64){
 #if MYNEWT_VAL(DW1000_CLOCK_CALIBRATION)
         // CCP Packet Received
@@ -399,13 +398,16 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
 #endif
     }
 
-    else if (inst->fctrl == FCNTL_IEEE_RANGE_16){ 
-        dw1000_read_rx(inst, (uint8_t *) &code, offsetof(ieee_rng_request_frame_t,code), sizeof(uint16_t));
-        dw1000_read_rx(inst, (uint8_t *) &dst_address, offsetof(ieee_rng_request_frame_t,dst_address), sizeof(uint16_t));    
-    }else{
-#if MYNEWT_VAL(DW1000_RANGE)
-        inst->rng_rx_error_cb(inst);
 #endif
+
+    if (inst->fctrl == FCNTL_IEEE_RANGE_16){
+        dw1000_read_rx(inst, (uint8_t *) &code, offsetof(ieee_rng_request_frame_t,code), sizeof(uint16_t));
+        dw1000_read_rx(inst, (uint8_t *) &dst_address, offsetof(ieee_rng_request_frame_t,dst_address), sizeof(uint16_t));
+    }else if(inst->extension_cb->rx_complete_cb != NULL){
+        inst->extension_cb->rx_complete_cb(inst);
+        return;
+    }
+    else{
         // Unrecognized range request, kicking external
         if (inst->rng_interface_extension_cb != NULL)
             inst->rng_interface_extension_cb(inst);

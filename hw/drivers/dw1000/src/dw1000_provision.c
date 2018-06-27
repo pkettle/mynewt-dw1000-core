@@ -41,6 +41,12 @@ static void provision_rx_timeout_cb(dw1000_dev_instance_t * inst);
 static void provision_rx_error_cb(dw1000_dev_instance_t * inst);
 static void provision_tx_complete_cb(dw1000_dev_instance_t * inst);
 static void provision_postprocess(struct os_event * ev);
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
+static void provision_rx_complete_ext_cb(dw1000_dev_instance_t * inst);
+static void provision_tx_complete_ext_cb(dw1000_dev_instance_t * inst);
+static void provision_rx_timeout_ext_cb(dw1000_dev_instance_t * inst);
+static void provision_rx_error_ext_cb(dw1000_dev_instance_t * inst);
+#endif
 
 static void
 provision_timer_ev_cb(struct os_event *ev) {
@@ -155,6 +161,15 @@ dw1000_provision_set_callbacks(dw1000_dev_instance_t * inst, dw1000_dev_cb_t pro
     inst->provision_rx_error_cb = provision_rx_error_cb;
 }
 
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
+void
+dw1000_provision_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t * provision_cbs){
+    provision_cbs->tx_complete_cb = provision_tx_complete_ext_cb;
+    provision_cbs->rx_complete_cb = provision_rx_complete_ext_cb;
+    provision_cbs->rx_timeout_cb = provision_rx_timeout_ext_cb;
+    provision_cbs->rx_error_cb = provision_rx_error_ext_cb;
+}
+#endif
 
 /*! 
  * @fn dw1000_provision_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * provision_postprocess)
@@ -223,7 +238,7 @@ provision_rx_complete_cb(dw1000_dev_instance_t* inst){
     dw1000_provision_instance_t * provision = inst->provision;
     dw1000_provision_config_t config = provision->config;
 
-    if (inst->fctrl == 0x8841){
+    if (inst->fctrl == 0x8844){
         dw1000_read_rx(inst, (uint8_t *) &code, offsetof(ieee_rng_request_frame_t,code), sizeof(uint16_t));
         dw1000_read_rx(inst, (uint8_t *) &dst_address, offsetof(ieee_rng_request_frame_t,dst_address), sizeof(uint16_t));
     }else{
@@ -292,6 +307,28 @@ provision_rx_complete_cb(dw1000_dev_instance_t* inst){
     }
 }
 
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
+static void
+provision_rx_complete_ext_cb(dw1000_dev_instance_t * inst){
+    dw1000_dev_control_t control = inst->control_rx_context;
+    if(inst->fctrl == FCNTL_IEEE_PROVISION_16)
+        provision_rx_complete_cb(inst);
+    else
+    {
+        if(inst->extension_cb->next != NULL)
+        {
+            inst->extension_cb->rx_complete_cb(inst);
+            //inst->extension_cb->next->rx_complete_cb(inst);
+        }
+        else
+        {
+            if (dw1000_restart_rx(inst, control).start_rx_error)
+                inst->provision_rx_error_cb(inst);
+        }
+    }
+}
+#endif
+
 /*! 
  * @fn dw1000_rx_timeout_cb(dw1000_dev_instance_t * inst)
  *
@@ -322,6 +359,28 @@ provision_rx_timeout_cb(dw1000_dev_instance_t * inst){
     }
 }
 
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
+static void
+provision_rx_timeout_ext_cb(dw1000_dev_instance_t * inst){
+    dw1000_dev_control_t control = inst->control_rx_context;
+    if(inst->fctrl == FCNTL_IEEE_PROVISION_16)
+        provision_rx_timeout_cb(inst);
+    else
+    {
+        if(inst->extension_cb->next != NULL)
+        {
+            inst->extension_cb->rx_timeout_cb(inst);
+        }
+        else
+        {
+            if (dw1000_restart_rx(inst, control).start_rx_error)
+                inst->provision_rx_error_cb(inst);
+        }
+    }
+
+}
+#endif
+
 /*! 
  * @fn dw1000_rx_error_cb(dw1000_dev_instance_t * inst)
  *
@@ -348,6 +407,27 @@ provision_rx_error_cb(dw1000_dev_instance_t * inst){
     }
 }
 
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
+static void
+provision_rx_error_ext_cb(dw1000_dev_instance_t * inst){
+    dw1000_dev_control_t control = inst->control_rx_context;
+    if(inst->fctrl == FCNTL_IEEE_PROVISION_16)
+        provision_rx_error_cb(inst);
+    else
+    {
+        if(inst->extension_cb->next != NULL)
+        {
+            inst->extension_cb->rx_timeout_cb(inst);
+        }
+        else
+        {
+            if (dw1000_restart_rx(inst, control).start_rx_error)
+                inst->provision_rx_error_cb(inst);
+        }
+    }
+}
+#endif
+
 /*! 
  * @fn dw1000_tx_complete_cb(dw1000_dev_instance_t * inst)
  *
@@ -364,6 +444,13 @@ static void
 provision_tx_complete_cb(dw1000_dev_instance_t * inst){
     //Place holder
 }
+
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
+static void
+provision_tx_complete_ext_cb(dw1000_dev_instance_t * inst){
+    //place holder
+}
+#endif
 
 /*! 
  * @fn dw1000_provision_request(dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode)
@@ -389,7 +476,7 @@ dw1000_provision_request(dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode){
 
     provision->status.provision_status = PROVISION_START;
     frame->seq_num++;
-    frame->fctrl = 0x8841;
+    frame->fctrl = 0x8844;
     frame->PANID = 0xDECA;
     frame->code = DWT_PROVISION_START;
     frame->src_address = inst->my_short_address;
