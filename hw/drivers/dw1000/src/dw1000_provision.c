@@ -226,23 +226,18 @@ provision_postprocess(struct os_event * ev){
 static void
 provision_rx_complete_cb(dw1000_dev_instance_t* inst){
     assert(inst != NULL);
-
 #if MYNEWT_VAL(DW1000_EXTENSION_API)
     dw1000_dev_control_t control = inst->control_rx_context;
-    if(inst->fctrl != FCNTL_IEEE_PROVISION_16)
-    {
-        if(inst->extension_cb->next != NULL)
-        {
+    if(inst->fctrl != FCNTL_IEEE_PROVISION_16){
+        if(inst->extension_cb->next != NULL){
             inst->extension_cb->next->rx_complete_cb(inst);
         }
-        else
-        {
+        else{
             dw1000_restart_rx(inst, control);
         }
         return;
     }
 #endif
-
     assert(inst->provision != NULL);
     uint16_t  frame_idx = inst->provision->idx;
     uint16_t code, dst_address;
@@ -335,13 +330,13 @@ provision_rx_timeout_cb(dw1000_dev_instance_t * inst){
     assert(inst != NULL);
 
 #if MYNEWT_VAL(DW1000_EXTENSION_API)
-    dw1000_dev_control_t control = inst->control_rx_context;
     if(inst->fctrl != FCNTL_IEEE_PROVISION_16){
-        if(inst->extension_cb->next != NULL)
-            inst->extension_cb->next->rx_timeout_cb(inst);
-        else
-            dw1000_restart_rx(inst, control);
-        return;
+        if(inst->extension_cb->next != NULL){
+            inst->extension_cb = inst->extension_cb->next;
+            if(inst->extension_cb->rx_timeout_cb != NULL)
+                inst->extension_cb->rx_timeout_cb(inst);
+        }
+		return;
     }
 #endif
     assert(inst->provision != NULL);
@@ -376,16 +371,15 @@ provision_rx_error_cb(dw1000_dev_instance_t * inst){
     assert(inst != NULL);
 
     #if MYNEWT_VAL(DW1000_EXTENSION_API)
-    dw1000_dev_control_t control = inst->control_rx_context;
     if(inst->fctrl != FCNTL_IEEE_PROVISION_16){
-        if(inst->extension_cb->next != NULL)
-            inst->extension_cb->next->rx_timeout_cb(inst);
-        else
-            dw1000_restart_rx(inst, control);
-        return;
+        if(inst->extension_cb->next != NULL){
+            inst->extension_cb = inst->extension_cb->next;
+            if(inst->extension_cb->rx_error_cb != NULL)
+                inst->extension_cb->rx_error_cb(inst);
+        }
+     	return;
     }
 #endif
-
     assert(inst->provision != NULL);
     if(inst->provision->status.provision_status == PROVISION_START){
         os_error_t err = os_sem_release(&inst->provision->sem);
@@ -412,12 +406,13 @@ provision_rx_error_cb(dw1000_dev_instance_t * inst){
 static void
 provision_tx_complete_cb(dw1000_dev_instance_t * inst){
     //Place holder
-
 #if MYNEWT_VAL(DW1000_EXTENSION_API)
 	if(inst->fctrl != FCNTL_IEEE_PROVISION_16){
-		if(inst->extension_cb->next != NULL)
-			inst->extension_cb->next->tx_complete_cb(inst);
-        return;
+		if(inst->extension_cb->next != NULL){
+        	inst->extension_cb = inst->extension_cb->next;
+        	if(inst->extension_cb->tx_complete_cb != NULL)
+           		inst->extension_cb->tx_complete_cb(inst);
+		}
 	}
 #endif
 }

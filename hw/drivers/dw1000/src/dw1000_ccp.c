@@ -44,6 +44,10 @@
 
 static void ccp_rx_complete_cb(dw1000_dev_instance_t * inst);
 static void ccp_tx_complete_cb(dw1000_dev_instance_t * inst);
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
+static void ccp_rx_error_cb(dw1000_dev_instance_t * inst);
+static void ccp_rx_timeout_cb(dw1000_dev_instance_t * inst);
+#endif
 static dw1000_ccp_status_t dw1000_ccp_blink(dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode);
 #if MYNEWT_VAL(CLOCK_CALIBRATION) !=1
 static void ccp_postprocess(struct os_event * ev);
@@ -195,8 +199,14 @@ dw1000_ccp_set_callbacks(dw1000_dev_instance_t * inst, dw1000_dev_cb_t ccp_rx_co
     inst->ccp_rx_complete_cb = ccp_rx_complete_cb;
     inst->ccp_tx_complete_cb = ccp_tx_complete_cb;
 }
-
-
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
+void dw1000_ccp_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t *ccp_cbs){
+    ccp_cbs->rx_complete_cb = ccp_rx_complete_cb;
+    ccp_cbs->tx_complete_cb = ccp_tx_complete_cb;
+    ccp_cbs->rx_timeout_cb = ccp_rx_timeout_cb;
+    ccp_cbs->rx_error_cb = ccp_rx_error_cb;
+}
+#endif
 /*! 
  * @fn dw1000_ccp_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * ccp_postprocess)
  *
@@ -260,6 +270,30 @@ static void ccp_postprocess(struct os_event * ev){
  */
 static void 
 ccp_rx_complete_cb(dw1000_dev_instance_t * inst){
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
+    if (inst->fctrl_array[0] == FCNTL_IEEE_BLINK_CCP_64){
+        // CCP Packet Received
+        uint64_t clock_master;
+        dw1000_read_rx(inst, (uint8_t *) &clock_master, offsetof(ieee_blink_frame_t,long_address), sizeof(uint64_t));
+        if(inst->clock_master != clock_master){
+            dw1000_restart_rx(inst, inst->control_rx_context);
+            return;
+       }
+    }else{
+        //The packet is not intended for the CCP. So pass it on to next item on list
+        //If there is not cb in the list go to receive mode again as it is a spurious packet
+        //inst->extension_cb = (dw1000_extension_callbacks_t*)(inst->extension_cb->next);
+        if(inst->extension_cb->next != NULL){
+            inst->extension_cb = inst->extension_cb->next;
+            if(inst->extension_cb->rx_complete_cb != NULL)
+                inst->extension_cb->rx_complete_cb(inst);
+        }
+        else{
+           dw1000_restart_rx(inst, inst->control_rx_context);
+        }
+        return;
+    }
+#endif
     dw1000_ccp_instance_t * ccp = inst->ccp; 
     ccp_frame_t * frame = ccp->frames[(++ccp->idx)%ccp->nframes];
     
@@ -272,6 +306,10 @@ ccp_rx_complete_cb(dw1000_dev_instance_t * inst){
     ccp->status.valid |= ccp->idx > ccp->nframes;
     if (ccp->config.postprocess && ccp->status.valid) 
         os_eventq_put(os_eventq_dflt_get(), &ccp->callout_postprocess.c_ev);
+   else{
+        inst->control = inst->control_rx_context;
+        dw1000_restart_rx(inst,inst->control_rx_context);
+    }
 }
 
 
@@ -294,6 +332,19 @@ ccp_rx_complete_cb(dw1000_dev_instance_t * inst){
  */
 static void 
 ccp_tx_complete_cb(dw1000_dev_instance_t * inst){
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
+    if (inst->fctrl_array[0] != FCNTL_IEEE_BLINK_CCP_64){
+        //The packet is not intended for the CCP. So pass it on to next item on list
+        //If there is not cb in the list go to receive mode again as it is a spurious packet
+        //inst->extension_cb = (dw1000_extension_callbacks_t*)(inst->extension_cb->next);
+        if(inst->extension_cb->next != NULL){
+            inst->extension_cb = inst->extension_cb->next;
+            if(inst->extension_cb->tx_complete_cb != NULL)
+                inst->extension_cb->tx_complete_cb(inst);
+        }
+        return;
+    }
+#endif
     //Advance frame idx 
     dw1000_ccp_instance_t * ccp = inst->ccp; 
     ccp_frame_t * previous_frame = ccp->frames[(ccp->idx)%ccp->nframes]; 
@@ -310,6 +361,57 @@ ccp_tx_complete_cb(dw1000_dev_instance_t * inst){
     os_sem_release(&inst->ccp->sem);  
 }
 
+/*! 
+ * @fn ccp_rx_error_cb(dw1000_dev_instance_t * inst)
+ *
+ * A place holder for rx_error_cb for ccp.
+ *
+ * input parameters
+ * @param inst - dw1000_dev_instance_t * 
+ *
+ * output parameters
+ *
+ * returns none 
+ */
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
+static void
+ccp_rx_error_cb(dw1000_dev_instance_t * inst){
+    /* Place holder */
+    if(inst->fctrl_array[0] != FCNTL_IEEE_BLINK_CCP_64){
+        if(inst->extension_cb->next != NULL){
+            inst->extension_cb = inst->extension_cb->next;
+            if(inst->extension_cb->rx_error_cb != NULL)
+                inst->extension_cb->rx_error_cb(inst);
+        }
+    }
+}
+#endif
+
+/*! 
+ * @fn ccp_rx_timeout_cb(dw1000_dev_instance_t * inst)
+ *
+ * A place holder for rx_error_cb for ccp.
+ *
+ * input parameters
+ * @param inst - dw1000_dev_instance_t * 
+ *
+ * output parameters
+ *
+ * returns none 
+ */
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
+static void
+ccp_rx_timeout_cb(dw1000_dev_instance_t * inst){
+    /* Place holder */
+    if(inst->fctrl_array[0] != FCNTL_IEEE_BLINK_CCP_64){
+        if(inst->extension_cb->next != NULL){
+            inst->extension_cb = inst->extension_cb->next;
+            if(inst->extension_cb->rx_timeout_cb != NULL)
+                inst->extension_cb->rx_timeout_cb(inst);
+        }
+    }
+}
+#endif
 
 /*! 
  * @fn dw1000_ccp_blink(dw1000_dev_instance_t * inst, dw1000_ccp_modes_t mode)

@@ -299,6 +299,15 @@ rng_tx_complete_cb(dw1000_dev_instance_t * inst)
         }
 #endif
     }
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
+    else if(inst->extension_cb != NULL){
+        dw1000_extension_callbacks_t *head = inst->extension_cb;
+        if(inst->extension_cb->tx_complete_cb != NULL){
+            inst->extension_cb->tx_complete_cb(inst);
+        }
+        inst->extension_cb = head;
+    }
+#else //MYNEWT_VAL(DW1000_EXTENSION_API)
     else if (inst->fctrl_array[0] == FCNTL_IEEE_BLINK_CCP_64){ 
 #if MYNEWT_VAL(DW1000_CLOCK_CALIBRATION)
         // Clock Calibration Packet Received
@@ -313,11 +322,12 @@ rng_tx_complete_cb(dw1000_dev_instance_t * inst)
             inst->pan_tx_complete_cb(inst);
 #endif
     }
+#endif //MYNEWT_VAL(DW1000_EXTENSION_API)
 }
 
 static void 
 rng_rx_timeout_cb(dw1000_dev_instance_t * inst){
-     
+#if MYNEWT_VAL(DW1000_EXTENSION_API) !=1
     if (inst->fctrl_array[0] == FCNTL_IEEE_BLINK_TAG_64){ 
 #if MYNEWT_VAL(DW1000_PAN)
         if (inst->pan_rx_timeout_cb != NULL)
@@ -325,15 +335,22 @@ rng_rx_timeout_cb(dw1000_dev_instance_t * inst){
 #endif
     }
 #if MYNEWT_VAL(DW1000_PROVISION)
-    if(inst->provision != NULL){
-        if(inst->provision->status.valid == true){
+       if(inst->fctrl == FCNTL_IEEE_PROVISION_16){
             if(inst->provision_rx_timeout_cb != NULL){
                 inst->provision_rx_timeout_cb(inst);
                 return;
             }
         }
-    }
 #endif
+#else //MYNEWT_VAL(DW1000_EXTENSION_API)
+	if(inst->extension_cb != NULL){
+        dw1000_extension_callbacks_t *head = inst->extension_cb;
+        if(inst->extension_cb->rx_timeout_cb != NULL){
+            inst->extension_cb->rx_timeout_cb(inst);
+        }
+        inst->extension_cb = head;
+    }
+#endif //MYNEWT_VAL(DW1000_EXTENSION_API)
     if (inst->rng_rx_timeout_extension_cb!= NULL)
             inst->rng_rx_timeout_extension_cb(inst); 
 #if MYNEWT_VAL(DW1000_RANGE)
@@ -346,17 +363,24 @@ rng_rx_timeout_cb(dw1000_dev_instance_t * inst){
 
 static void 
 rng_rx_error_cb(dw1000_dev_instance_t * inst){
-
+#if MYNEWT_VAL(DW1000_EXTENSION_API) !=1
 #if MYNEWT_VAL(DW1000_PROVISION)
-    if(inst->provision != NULL){
-        if(inst->provision->status.valid == true){
+       if(inst->fctrl == FCNTL_IEEE_PROVISION_16){
             if(inst->provision_rx_error_cb != NULL){
                 inst->provision_rx_error_cb(inst);
                 return;
             }
         }
-    }
 #endif
+#else //MYNEWT_VAL(DW1000_EXTENSION_API)
+	if(inst->extension_cb != NULL){
+        dw1000_extension_callbacks_t *head = inst->extension_cb;
+        if(inst->extension_cb->rx_error_cb != NULL){
+            inst->extension_cb->rx_error_cb(inst);
+        }
+        inst->extension_cb = head;
+    }
+#endif //MYNEWT_VAL(DW1000_EXTENSION_API)
     if (inst->rng_rx_error_extension_cb!= NULL)
             inst->rng_rx_error_extension_cb(inst); 
 #if MYNEWT_VAL(DW1000_RANGE)
@@ -373,17 +397,61 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
     uint16_t code, dst_address; 
     dw1000_rng_config_t * config = inst->rng->config;
     dw1000_dev_control_t control = inst->control_rx_context;
+//If old legacy method is used then do all the checks for each packet type in rx_complete_cb itself
+#if MYNEWT_VAL(DW1000_EXTENSION_API) !=1
+    if (inst->fctrl_array[0] == FCNTL_IEEE_BLINK_CCP_64){
+#if MYNEWT_VAL(DW1000_CLOCK_CALIBRATION)
+        // CCP Packet Received
+        uint64_t clock_master;
+        dw1000_read_rx(inst, (uint8_t *) &clock_master, offsetof(ieee_blink_frame_t,long_address), sizeof(uint64_t));    
+       
+        if (inst->ccp_rx_complete_cb != NULL && inst->clock_master == clock_master)
+            inst->ccp_rx_complete_cb(inst);
+#if MYNEWT_VAL(DW1000_PROVISION)
+        else{ 
+            if (dw1000_restart_rx(inst, control).start_rx_error)
+                inst->rng_rx_error_cb(inst);  
+        }
+#else
+        if (dw1000_restart_rx(inst, control).start_rx_error)
+            inst->rng_rx_error_cb(inst);  
+#endif
+        return;  
+#endif
+    }
+    else if (inst->fctrl_array[0] == FCNTL_IEEE_BLINK_TAG_64){ 
+#if MYNEWT_VAL(DW1000_PAN)
+        // PAN Discovery Packet Received
+        if (inst->pan_rx_complete_cb != NULL)
+            inst->pan_rx_complete_cb(inst);
+        return;  
+#endif
+    }else if(inst->fctrl == FCNTL_IEEE_PROVISION_16){
+#if MYNEWT_VAL(DW1000_PROVISION)
+        if(inst->provision_rx_complete_cb != NULL){
+            inst->provision_rx_complete_cb(inst);
+        }
+        return;
+#endif
+    }else if(inst->fctrl == FCNTL_IEEE_RANGE_16){
 
+//If the new exstension method is used, then check if the packet is for range or else just call out the extension callback
+#else //MYNEWT_VAL(DW1000_EXTENSION_API)
     if (inst->fctrl == FCNTL_IEEE_RANGE_16){
+#endif //MYNEWT_VAL(DW1000_EXTENSION_API)
         dw1000_read_rx(inst, (uint8_t *) &code, offsetof(ieee_rng_request_frame_t,code), sizeof(uint16_t));
         dw1000_read_rx(inst, (uint8_t *) &dst_address, offsetof(ieee_rng_request_frame_t,dst_address), sizeof(uint16_t));
     }
 #if MYNEWT_VAL(DW1000_EXTENSION_API)
-    else if(inst->extension_cb->rx_complete_cb != NULL){
-        inst->extension_cb->rx_complete_cb(inst);
+    else if(inst->extension_cb != NULL){
+        dw1000_extension_callbacks_t *head = inst->extension_cb;
+        if(inst->extension_cb->rx_complete_cb != NULL){
+            inst->extension_cb->rx_complete_cb(inst);
+        }
+        inst->extension_cb = head;
         return;
     }
-#endif
+#endif //MYNEWT_VAL(DW1000_EXTENSION_API)
     else{
         // Unrecognized range request, kicking external
         if (inst->rng_interface_extension_cb != NULL)
@@ -415,19 +483,6 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
 #endif
 
     switch (code){
-#if MYNEWT_VAL(DW1000_EXTENSION_API) != 1
-        case DWT_PROVISION_START ... DWT_PROVISION_RESP:
-#if MYNEWT_VAL(DW1000_PROVISION)
-            if(inst->provision_rx_complete_cb != NULL){
-                inst->provision_rx_complete_cb(inst);
-            }
-#else
-            inst->control = inst->control_rx_context;
-            if (dw1000_restart_rx(inst, control).start_rx_error)
-                inst->rng_rx_error_cb(inst);
-#endif
-            break;
-#endif
 #ifdef SS_TWR_ENABLE
         case DWT_SS_TWR ... DWT_SS_TWR_FINAL:
             switch(code){

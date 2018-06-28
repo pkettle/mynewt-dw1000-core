@@ -34,7 +34,7 @@ syscfg.defs:
         description: 'TWR Ranging functionality'
         value:  0
     DW1000_EXTENSION_API:
-        value: 1
+        value:  0
     LOCAL_COORDINATE_X:
         description: >
             Default Anchor X Coordinate  
@@ -61,7 +61,7 @@ syscfg.defs:
     CCP_PERIOD:
         description: >
             Clock Calibration Packets Period 
-        value: ((uint32_t){0x200000})
+        value: ((uint32_t){0x20000})
     PAN_PERIOD:
         description: >
             PAN Discovery Packets Period 

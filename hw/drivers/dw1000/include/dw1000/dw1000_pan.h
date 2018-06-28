@@ -93,8 +93,9 @@ void dw1000_pan_set_callbacks(dw1000_dev_instance_t * inst,  dw1000_dev_cb_t pan
 void dw1000_pan_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * postprocess); 
 void dw1000_pan_start(dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode);
 void dw1000_pan_stop(dw1000_dev_instance_t * inst);
-
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
 void dw1000_pan_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t * pan_cbs);
+#endif
 
 #ifdef __cplusplus
 }
