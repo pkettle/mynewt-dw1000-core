@@ -41,12 +41,6 @@ static void provision_rx_timeout_cb(dw1000_dev_instance_t * inst);
 static void provision_rx_error_cb(dw1000_dev_instance_t * inst);
 static void provision_tx_complete_cb(dw1000_dev_instance_t * inst);
 static void provision_postprocess(struct os_event * ev);
-#if MYNEWT_VAL(DW1000_EXTENSION_API)
-static void provision_rx_complete_ext_cb(dw1000_dev_instance_t * inst);
-static void provision_tx_complete_ext_cb(dw1000_dev_instance_t * inst);
-static void provision_rx_timeout_ext_cb(dw1000_dev_instance_t * inst);
-static void provision_rx_error_ext_cb(dw1000_dev_instance_t * inst);
-#endif
 
 static void
 provision_timer_ev_cb(struct os_event *ev) {
@@ -135,6 +129,16 @@ dw1000_provision_free(dw1000_dev_instance_t * inst){
         inst->status.initialized = 0;
 }
 
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
+void
+dw1000_provision_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t * provision_cbs){
+    provision_cbs->tx_complete_cb = provision_tx_complete_cb;
+    provision_cbs->rx_complete_cb = provision_rx_complete_cb;
+    provision_cbs->rx_timeout_cb = provision_rx_timeout_cb;
+    provision_cbs->rx_error_cb = provision_rx_error_cb;
+}
+#endif
+
 /*! 
  * @fn dw1000_provision_set_callbacks(dw1000_dev_instance_t * inst,dw1000_dev_cb_t provision_rx_complete_cb, dw1000_dev_cb_t provision_tx_complete_cb,\
  *                                    dw1000_dev_cb_t provision_rx_timeout_cb, dw1000_dev_cb_t provision_rx_error_cb)
@@ -147,9 +151,9 @@ dw1000_provision_free(dw1000_dev_instance_t * inst){
  * @param inst - dw1000_dev_cb_t  provision_tx_complete_cb
  * @param inst - dw1000_dev_cb_t  provision_rx_timeout_cb
  * @param inst - dw1000_dev_cb_t  provision_rx_error_cb
- *
+ *  
  * output parameters
- *
+ *  
  * returns none
  */
 void 
@@ -160,16 +164,6 @@ dw1000_provision_set_callbacks(dw1000_dev_instance_t * inst, dw1000_dev_cb_t pro
     inst->provision_rx_timeout_cb = provision_rx_timeout_cb;
     inst->provision_rx_error_cb = provision_rx_error_cb;
 }
-
-#if MYNEWT_VAL(DW1000_EXTENSION_API)
-void
-dw1000_provision_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t * provision_cbs){
-    provision_cbs->tx_complete_cb = provision_tx_complete_ext_cb;
-    provision_cbs->rx_complete_cb = provision_rx_complete_ext_cb;
-    provision_cbs->rx_timeout_cb = provision_rx_timeout_ext_cb;
-    provision_cbs->rx_error_cb = provision_rx_error_ext_cb;
-}
-#endif
 
 /*! 
  * @fn dw1000_provision_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * provision_postprocess)
@@ -232,6 +226,23 @@ provision_postprocess(struct os_event * ev){
 static void
 provision_rx_complete_cb(dw1000_dev_instance_t* inst){
     assert(inst != NULL);
+
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
+    dw1000_dev_control_t control = inst->control_rx_context;
+    if(inst->fctrl != FCNTL_IEEE_PROVISION_16)
+    {
+        if(inst->extension_cb->next != NULL)
+        {
+            inst->extension_cb->next->rx_complete_cb(inst);
+        }
+        else
+        {
+            dw1000_restart_rx(inst, control);
+        }
+        return;
+    }
+#endif
+
     assert(inst->provision != NULL);
     uint16_t  frame_idx = inst->provision->idx;
     uint16_t code, dst_address;
@@ -307,26 +318,6 @@ provision_rx_complete_cb(dw1000_dev_instance_t* inst){
     }
 }
 
-#if MYNEWT_VAL(DW1000_EXTENSION_API)
-static void
-provision_rx_complete_ext_cb(dw1000_dev_instance_t * inst){
-    dw1000_dev_control_t control = inst->control_rx_context;
-    if(inst->fctrl == FCNTL_IEEE_PROVISION_16)
-        provision_rx_complete_cb(inst);
-    else
-    {
-        if(inst->extension_cb->next != NULL)
-        {
-            inst->extension_cb->next->rx_complete_cb(inst);
-        }
-        else
-        {
-            dw1000_restart_rx(inst, control);
-        }
-    }
-}
-#endif
-
 /*! 
  * @fn dw1000_rx_timeout_cb(dw1000_dev_instance_t * inst)
  *
@@ -342,6 +333,17 @@ provision_rx_complete_ext_cb(dw1000_dev_instance_t * inst){
 static void
 provision_rx_timeout_cb(dw1000_dev_instance_t * inst){
     assert(inst != NULL);
+
+#if MYNEWT_VAL(DW1000_EXTENSION_API)
+    dw1000_dev_control_t control = inst->control_rx_context;
+    if(inst->fctrl != FCNTL_IEEE_PROVISION_16){
+        if(inst->extension_cb->next != NULL)
+            inst->extension_cb->next->rx_timeout_cb(inst);
+        else
+            dw1000_restart_rx(inst, control);
+        return;
+    }
+#endif
     assert(inst->provision != NULL);
     dw1000_provision_instance_t *provision = inst->provision;
     if(provision->status.provision_status == PROVISION_START){
@@ -356,27 +358,6 @@ provision_rx_timeout_cb(dw1000_dev_instance_t * inst){
         dw1000_start_rx(inst);
     }
 }
-
-#if MYNEWT_VAL(DW1000_EXTENSION_API)
-static void
-provision_rx_timeout_ext_cb(dw1000_dev_instance_t * inst){
-    dw1000_dev_control_t control = inst->control_rx_context;
-    if(inst->fctrl == FCNTL_IEEE_PROVISION_16)
-        provision_rx_timeout_cb(inst);
-    else
-    {
-        if(inst->extension_cb->next != NULL)
-        {
-            inst->extension_cb->next->rx_timeout_cb(inst);
-        }
-        else
-        {
-            dw1000_restart_rx(inst, control);
-        }
-    }
-
-}
-#endif
 
 /*! 
  * @fn dw1000_rx_error_cb(dw1000_dev_instance_t * inst)
@@ -393,6 +374,18 @@ provision_rx_timeout_ext_cb(dw1000_dev_instance_t * inst){
 static void
 provision_rx_error_cb(dw1000_dev_instance_t * inst){
     assert(inst != NULL);
+
+    #if MYNEWT_VAL(DW1000_EXTENSION_API)
+    dw1000_dev_control_t control = inst->control_rx_context;
+    if(inst->fctrl != FCNTL_IEEE_PROVISION_16){
+        if(inst->extension_cb->next != NULL)
+            inst->extension_cb->next->rx_timeout_cb(inst);
+        else
+            dw1000_restart_rx(inst, control);
+        return;
+    }
+#endif
+
     assert(inst->provision != NULL);
     if(inst->provision->status.provision_status == PROVISION_START){
         os_error_t err = os_sem_release(&inst->provision->sem);
@@ -403,26 +396,6 @@ provision_rx_error_cb(dw1000_dev_instance_t * inst){
         dw1000_start_rx(inst);
     }
 }
-
-#if MYNEWT_VAL(DW1000_EXTENSION_API)
-static void
-provision_rx_error_ext_cb(dw1000_dev_instance_t * inst){
-    dw1000_dev_control_t control = inst->control_rx_context;
-    if(inst->fctrl == FCNTL_IEEE_PROVISION_16)
-        provision_rx_error_cb(inst);
-    else
-    {
-        if(inst->extension_cb->next != NULL)
-        {
-            inst->extension_cb->next->rx_timeout_cb(inst);
-        }
-        else
-        {
-            dw1000_restart_rx(inst, control);
-        }
-    }
-}
-#endif
 
 /*! 
  * @fn dw1000_tx_complete_cb(dw1000_dev_instance_t * inst)
@@ -439,17 +412,15 @@ provision_rx_error_ext_cb(dw1000_dev_instance_t * inst){
 static void
 provision_tx_complete_cb(dw1000_dev_instance_t * inst){
     //Place holder
-}
 
 #if MYNEWT_VAL(DW1000_EXTENSION_API)
-static void
-provision_tx_complete_ext_cb(dw1000_dev_instance_t * inst){
-    if(inst->fctrl == FCNTL_IEEE_PROVISION_16)
-        provision_tx_complete_cb(inst);
-    else if(inst->extension_cb->next != NULL)
-        inst->extension_cb->next->tx_complete_cb(inst);
-}
+	if(inst->fctrl != FCNTL_IEEE_PROVISION_16){
+		if(inst->extension_cb->next != NULL)
+			inst->extension_cb->next->tx_complete_cb(inst);
+        return;
+	}
 #endif
+}
 
 /*! 
  * @fn dw1000_provision_request(dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode)
