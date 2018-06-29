@@ -227,12 +227,13 @@ static void
 provision_rx_complete_cb(dw1000_dev_instance_t* inst){
     assert(inst != NULL);
 #if MYNEWT_VAL(DW1000_EXTENSION_API)
-    dw1000_dev_control_t control = inst->control_rx_context;
     if(inst->fctrl != FCNTL_IEEE_PROVISION_16){
         if(inst->extension_cb->next != NULL){
-            inst->extension_cb->next->rx_complete_cb(inst);
+            inst->extension_cb = inst->extension_cb->next;
+            inst->extension_cb->rx_complete_cb(inst);
         }
         else{
+            dw1000_dev_control_t control = inst->control_rx_context;
             dw1000_restart_rx(inst, control);
         }
         return;

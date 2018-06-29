@@ -357,8 +357,10 @@ rng_rx_timeout_cb(dw1000_dev_instance_t * inst){
         assert(inst->range_error_cb != NULL);
         inst->range_error_cb(inst);
 #endif
-    os_error_t err = os_sem_release(&inst->rng->sem);
-    assert(err == OS_OK);
+    if(inst->fctrl == FCNTL_IEEE_RANGE_16){
+        os_error_t err = os_sem_release(&inst->rng->sem);
+        assert(err == OS_OK);
+    }
 }
 
 static void 
@@ -387,8 +389,10 @@ rng_rx_error_cb(dw1000_dev_instance_t * inst){
         assert(inst->range_error_cb != NULL);
         inst->range_error_cb(inst);
 #endif
-    os_error_t err = os_sem_release(&inst->rng->sem);   
-    assert(err == OS_OK);
+    if(inst->fctrl == FCNTL_IEEE_RANGE_16){
+        os_error_t err = os_sem_release(&inst->rng->sem);   
+        assert(err == OS_OK);
+    }
 }
 
 static void 

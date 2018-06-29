@@ -64,7 +64,6 @@ pan_timer_ev_cb(struct os_event *ev) {
     assert(ev != NULL);
     assert(ev->ev_arg != NULL);
 
-printf("pan_timer_ev_cb\n");
     dw1000_dev_instance_t * inst = (dw1000_dev_instance_t *)ev->ev_arg;
     dw1000_pan_instance_t * pan = inst->pan; 
 
@@ -266,19 +265,20 @@ pan_postprocess(struct os_event * ev){
  */
 static void 
 pan_rx_complete_cb(dw1000_dev_instance_t * inst){
-    //printf("pan_rx_complete_cb\n");
 #if MYNEWT_VAL(DW1000_EXTENSION_API)
      if(inst->fctrl_array[0] != FCNTL_IEEE_BLINK_TAG_64){
         if(inst->extension_cb->next != NULL){
 			inst->extension_cb = inst->extension_cb->next;
 			if(inst->extension_cb->rx_complete_cb != NULL)
 	            inst->extension_cb->rx_complete_cb(inst);
-        }
-        else
-        {
+        }else{
             dw1000_dev_control_t control = inst->control_rx_context;
             dw1000_restart_rx(inst, control);
         }
+        return;
+    }else if(inst->pan->status.valid == true){
+        dw1000_dev_control_t control = inst->control_rx_context;
+        dw1000_restart_rx(inst, control);
         return;
     }
 #endif
@@ -331,7 +331,7 @@ pan_tx_complete_cb(dw1000_dev_instance_t * inst){
         if(inst->extension_cb->next != NULL){
 			inst->extension_cb = inst->extension_cb->next;
 			if(inst->extension_cb->tx_complete_cb != NULL)
-	            inst->extension_cb->next->tx_complete_cb(inst);
+	            inst->extension_cb->tx_complete_cb(inst);
         }
 	return;
     }
@@ -364,7 +364,7 @@ pan_rx_error_cb(dw1000_dev_instance_t * inst){
         if(inst->extension_cb->next != NULL){
 			inst->extension_cb = inst->extension_cb->next;
 			if(inst->extension_cb->rx_error_cb != NULL)
-	            inst->extension_cb->next->rx_error_cb(inst);
+	            inst->extension_cb->rx_error_cb(inst);
         }
         return;
     }
@@ -392,7 +392,7 @@ pan_rx_timeout_cb(dw1000_dev_instance_t * inst){
         if(inst->extension_cb->next != NULL){
 			inst->extension_cb = inst->extension_cb->next;
 			if(inst->extension_cb->rx_timeout_cb != NULL)
-	            inst->extension_cb->next->rx_timeout_cb(inst);
+	            inst->extension_cb->rx_timeout_cb(inst);
         }
     }
 #endif
