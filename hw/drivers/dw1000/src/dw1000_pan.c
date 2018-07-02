@@ -51,9 +51,7 @@ static pan_frame_t frames[] = {
 static void pan_rx_complete_cb(dw1000_dev_instance_t * inst);
 static void pan_tx_complete_cb(dw1000_dev_instance_t * inst);
 static void pan_rx_timeout_cb(dw1000_dev_instance_t * inst);
-#if MYNEWT_VAL(DW1000_EXTENSION_API)
 static void pan_rx_error_cb(dw1000_dev_instance_t * inst);
-#endif
 static dw1000_pan_status_t dw1000_pan_blink(dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode);
 static void pan_postprocess(struct os_event * ev);
 static struct os_callout g_pan_callout_timer;
@@ -119,7 +117,6 @@ dw1000_pan_init(dw1000_dev_instance_t * inst,  dw1000_pan_config_t * config){
     for (uint16_t i = 0; i < inst->pan->nframes; i++)
         inst->pan->frames[i] = &frames[i];
 
-    dw1000_pan_set_callbacks(inst, pan_rx_complete_cb, pan_tx_complete_cb, pan_rx_timeout_cb);
     dw1000_pan_set_postprocess(inst, pan_postprocess);
 
     dw1000_pan_instance_t * pan = inst->pan; 
@@ -166,21 +163,12 @@ dw1000_pan_free(dw1000_dev_instance_t * inst){
  *
  * returns none
  */
-void 
-dw1000_pan_set_callbacks(dw1000_dev_instance_t * inst, dw1000_dev_cb_t  pan_rx_complete_cb, dw1000_dev_cb_t  pan_tx_complete_cb, dw1000_dev_cb_t  pan_rx_timeout_cb){
-    inst->pan_rx_complete_cb = pan_rx_complete_cb;
-    inst->pan_tx_complete_cb = pan_tx_complete_cb;
-    inst->pan_rx_timeout_cb = pan_rx_timeout_cb;
-}
-
-#if MYNEWT_VAL(DW1000_EXTENSION_API)
 void dw1000_pan_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t * pan_cbs){
     pan_cbs->tx_complete_cb = pan_tx_complete_cb;
     pan_cbs->rx_complete_cb = pan_rx_complete_cb;
     pan_cbs->rx_timeout_cb = pan_rx_timeout_cb;
     pan_cbs->rx_error_cb = pan_rx_error_cb;
 }
-#endif
 
 /*! 
  * @fn dw1000_pan_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * pan_postprocess)
@@ -265,7 +253,6 @@ pan_postprocess(struct os_event * ev){
  */
 static void 
 pan_rx_complete_cb(dw1000_dev_instance_t * inst){
-#if MYNEWT_VAL(DW1000_EXTENSION_API)
      if(inst->fctrl_array[0] != FCNTL_IEEE_BLINK_TAG_64){
         if(inst->extension_cb->next != NULL){
 			inst->extension_cb = inst->extension_cb->next;
@@ -281,7 +268,6 @@ pan_rx_complete_cb(dw1000_dev_instance_t * inst){
         dw1000_restart_rx(inst, control);
         return;
     }
-#endif
     dw1000_pan_instance_t * pan = inst->pan; 
     pan_frame_t * frame = pan->frames[(pan->idx)%pan->nframes];
 
@@ -326,7 +312,6 @@ pan_rx_complete_cb(dw1000_dev_instance_t * inst){
 static void 
 pan_tx_complete_cb(dw1000_dev_instance_t * inst){
     //printf("pan_tx_complete_cb\n");
-#if MYNEWT_VAL(DW1000_EXTENSION_API)
    if(inst->fctrl_array[0] != FCNTL_IEEE_BLINK_TAG_64){
         if(inst->extension_cb->next != NULL){
 			inst->extension_cb = inst->extension_cb->next;
@@ -335,7 +320,6 @@ pan_tx_complete_cb(dw1000_dev_instance_t * inst){
         }
 	return;
     }
-#endif
     dw1000_pan_instance_t * pan = inst->pan;
     if (pan->status.timer_enabled && pan->status.valid == false)
         os_callout_reset(&g_pan_callout_timer, OS_TICKS_PER_SEC * (pan->period - MYNEWT_VAL(OS_LATENCY)) * 1e-6);
@@ -356,7 +340,6 @@ pan_tx_complete_cb(dw1000_dev_instance_t * inst){
  *
  * returns none
  */
-#if MYNEWT_VAL(DW1000_EXTENSION_API)
 static void
 pan_rx_error_cb(dw1000_dev_instance_t * inst){
     /* Place holder */
@@ -370,7 +353,6 @@ pan_rx_error_cb(dw1000_dev_instance_t * inst){
     }
     os_sem_release(&inst->pan->sem);
 }
-#endif
 
 /*! 
  * @fn pan_rx_timeout_cb(dw1000_dev_instance_t * inst)
@@ -387,7 +369,6 @@ pan_rx_error_cb(dw1000_dev_instance_t * inst){
 static void 
 pan_rx_timeout_cb(dw1000_dev_instance_t * inst){
     //printf("pan_rx_timeout_cb\n");  
-#if MYNEWT_VAL(DW1000_EXTENSION_API)
     if(inst->fctrl_array[0] != FCNTL_IEEE_BLINK_TAG_64){
         if(inst->extension_cb->next != NULL){
 			inst->extension_cb = inst->extension_cb->next;
@@ -395,7 +376,6 @@ pan_rx_timeout_cb(dw1000_dev_instance_t * inst){
 	            inst->extension_cb->rx_timeout_cb(inst);
         }
     }
-#endif
     dw1000_pan_instance_t * pan = inst->pan;
     if (pan->status.timer_enabled)
         os_callout_reset(&g_pan_callout_timer, OS_TICKS_PER_SEC * (pan->period - MYNEWT_VAL(OS_LATENCY)) * 1e-6);

@@ -33,8 +33,6 @@ syscfg.defs:
     DW1000_RANGE:
         description: 'TWR Ranging functionality'
         value:  0
-    DW1000_EXTENSION_API:
-        value:  0
     LOCAL_COORDINATE_X:
         description: >
             Default Anchor X Coordinate  

@@ -90,9 +90,7 @@ dw1000_provision_status_t dw1000_provision_request(dw1000_dev_instance_t * inst,
 void dw1000_provision_free(dw1000_dev_instance_t * inst);
 void dw1000_provision_set_callbacks(dw1000_dev_instance_t * inst,  dw1000_dev_cb_t provision_rx_complete_cb,\
      dw1000_dev_cb_t provision_tx_complete_cb, dw1000_dev_cb_t provision_rx_timeout_cb, dw1000_dev_cb_t provision_rx_error_cb);
-#if MYNEWT_VAL(DW1000_EXTENSION_API)
 void dw1000_provision_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t * provision_cbs);
-#endif
 void dw1000_provision_start(dw1000_dev_instance_t * inst);
 void dw1000_provision_stop(dw1000_dev_instance_t * inst);
 void dw1000_provision_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * provision_postprocess);
