@@ -171,8 +171,7 @@ dw1000_pan_free(dw1000_dev_instance_t * inst){
  * returns none
  */
 void dw1000_pan_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t pan_cbs){
-    dw1000_pan_instance_t *pan = inst->pan;
-    memcpy(&pan->pan_cbs, &pan_cbs, sizeof(dw1000_extension_callbacks_t));
+    pan_cbs.id = SERVICE_PAN;
     dw1000_add_extension_callbacks(inst , pan_cbs);
 }
 

@@ -379,18 +379,38 @@ dw1000_new_extension_callbacks(dw1000_dev_instance_t* inst){
 }
 
 void
-dw1000_del_extension_callbacks(dw1000_dev_instance_t* inst){
+dw1000_delete_extension_callbacks(dw1000_dev_instance_t* inst, dw1000_extension_service_id_t id){
+    int count = 0;
     dw1000_extension_callbacks_t* temp = inst->extension_cb;
-    dw1000_extension_callbacks_t* t = NULL;
-    if(inst->extension_cb->next == NULL){
-        free(inst->extension_cb);
-        inst->extension_cb = NULL;
+    int pos = dw1000_find_extension_callbacks_position(inst, id);
+    if(pos == 0){
+        inst->extension_cb = inst->extension_cb->next;
+        free(temp);
+        temp = NULL;
     }else{
-        while(temp->next != NULL){
-            t = temp;
+        while(temp != NULL && count < (pos-1)){
             temp = temp->next;
+            count++;
         }
-        free(t->next);
-        t->next = NULL;
+        if(temp == NULL || temp->next == NULL){
+            return;
+        }
+        dw1000_extension_callbacks_t *next = temp->next->next;
+        free(temp->next);
+        temp->next = next;
     }
+}
+
+int
+dw1000_find_extension_callbacks_position(dw1000_dev_instance_t *inst, dw1000_extension_service_id_t id){
+    int count = 0;
+    dw1000_extension_callbacks_t* temp = inst->extension_cb;
+    while(temp != NULL){
+        if(temp->id == id){
+            return count;
+        }
+        temp = temp->next;
+        count++;
+    }
+    return -1;
 }

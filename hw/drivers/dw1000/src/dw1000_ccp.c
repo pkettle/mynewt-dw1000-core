@@ -198,8 +198,7 @@ dw1000_ccp_free(dw1000_ccp_instance_t * inst){
 }
 
 void dw1000_ccp_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t ccp_cbs){
-    dw1000_ccp_instance_t* ccp = inst->ccp;
-    memcpy(&(ccp->ccp_cbs), &ccp_cbs, sizeof(dw1000_extension_callbacks_t));
+    ccp_cbs.id = SERVICE_CCP;
     dw1000_add_extension_callbacks(inst , ccp_cbs);
 }
 /*! 
