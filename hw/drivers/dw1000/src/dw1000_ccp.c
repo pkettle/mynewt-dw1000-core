@@ -120,6 +120,7 @@ dw1000_ccp_instance_t *
 dw1000_ccp_init(dw1000_dev_instance_t * inst, uint16_t nframes, uint64_t clock_master){
     assert(inst);
     assert(nframes > 1);
+    dw1000_extension_callbacks_t ccp_cbs;
 
     if (inst->ccp == NULL ) {
         inst->ccp = (dw1000_ccp_instance_t *) malloc(sizeof(dw1000_ccp_instance_t) + nframes * sizeof(ccp_frame_t *)); 
@@ -158,6 +159,12 @@ dw1000_ccp_init(dw1000_dev_instance_t * inst, uint16_t nframes, uint64_t clock_m
     dw1000_ccp_set_postprocess(inst->ccp, &ccp_postprocess);            // Using default process
 #endif
 
+    ccp_cbs.tx_complete_cb = ccp_tx_complete_cb;
+    ccp_cbs.rx_complete_cb = ccp_rx_complete_cb;
+    ccp_cbs.rx_timeout_cb = ccp_rx_timeout_cb;
+    ccp_cbs.rx_error_cb = ccp_rx_error_cb;
+    
+    dw1000_ccp_set_ext_callbacks(inst, ccp_cbs);
     dw1000_ccp_instance_t * ccp = inst->ccp; 
     ccp_frame_t * frame = ccp->frames[(ccp->idx)%ccp->nframes]; 
     frame->transmission_timestamp = dw1000_read_systime(inst);
@@ -190,11 +197,10 @@ dw1000_ccp_free(dw1000_ccp_instance_t * inst){
         inst->status.initialized = 0;
 }
 
-void dw1000_ccp_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t *ccp_cbs){
-    ccp_cbs->rx_complete_cb = ccp_rx_complete_cb;
-    ccp_cbs->tx_complete_cb = ccp_tx_complete_cb;
-    ccp_cbs->rx_timeout_cb = ccp_rx_timeout_cb;
-    ccp_cbs->rx_error_cb = ccp_rx_error_cb;
+void dw1000_ccp_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t ccp_cbs){
+    dw1000_ccp_instance_t* ccp = inst->ccp;
+    memcpy(&(ccp->ccp_cbs), &ccp_cbs, sizeof(dw1000_extension_callbacks_t));
+    dw1000_add_extension_callbacks(inst , ccp_cbs);
 }
 /*! 
  * @fn dw1000_ccp_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * ccp_postprocess)

@@ -273,6 +273,10 @@ dw1000_dev_status_t dw1000_dev_enter_sleep(dw1000_dev_instance_t * inst);
 dw1000_dev_status_t dw1000_dev_wakeup(dw1000_dev_instance_t * inst);
 void dw1000_dev_enter_sleep_after_tx(dw1000_dev_instance_t * inst, int enable);
     
+void dw1000_add_extension_callbacks(dw1000_dev_instance_t* inst, dw1000_extension_callbacks_t callbacks);
+void dw1000_del_extension_callbacks(dw1000_dev_instance_t* inst);
+dw1000_extension_callbacks_t* dw1000_new_extension_callbacks(dw1000_dev_instance_t* inst);
+
 #ifdef __cplusplus
 }
 #endif

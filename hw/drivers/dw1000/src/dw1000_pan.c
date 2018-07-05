@@ -95,6 +95,7 @@ dw1000_pan_init(dw1000_dev_instance_t * inst,  dw1000_pan_config_t * config){
     assert(inst);
 
     uint16_t nframes = sizeof(frames)/sizeof(pan_frame_t);
+    dw1000_extension_callbacks_t pan_cbs;
     if (inst->pan == NULL ) {
         inst->pan = (dw1000_pan_instance_t *) malloc(sizeof(dw1000_pan_instance_t) + nframes * sizeof(pan_frame_t *)); 
         assert(inst->pan);
@@ -119,6 +120,13 @@ dw1000_pan_init(dw1000_dev_instance_t * inst,  dw1000_pan_config_t * config){
 
     dw1000_pan_set_postprocess(inst, pan_postprocess);
 
+    pan_cbs.tx_complete_cb = pan_tx_complete_cb;
+    pan_cbs.rx_complete_cb = pan_rx_complete_cb;
+    pan_cbs.rx_timeout_cb = pan_rx_timeout_cb;
+    pan_cbs.rx_error_cb = pan_rx_error_cb;
+    
+    dw1000_pan_set_ext_callbacks(inst, pan_cbs);
+
     dw1000_pan_instance_t * pan = inst->pan; 
     pan_frame_t * frame = pan->frames[(pan->idx)%pan->nframes]; 
     frame->transmission_timestamp = dw1000_read_systime(inst);
@@ -141,7 +149,6 @@ dw1000_pan_init(dw1000_dev_instance_t * inst,  dw1000_pan_config_t * config){
 void 
 dw1000_pan_free(dw1000_dev_instance_t * inst){
     assert(inst->pan);  
-    dw1000_pan_set_callbacks(inst, (dw1000_dev_cb_t) NULL, (dw1000_dev_cb_t) NULL, (dw1000_dev_cb_t) NULL);
     if (inst->status.selfmalloc)
         free(inst->pan);
     else
@@ -163,11 +170,10 @@ dw1000_pan_free(dw1000_dev_instance_t * inst){
  *
  * returns none
  */
-void dw1000_pan_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t * pan_cbs){
-    pan_cbs->tx_complete_cb = pan_tx_complete_cb;
-    pan_cbs->rx_complete_cb = pan_rx_complete_cb;
-    pan_cbs->rx_timeout_cb = pan_rx_timeout_cb;
-    pan_cbs->rx_error_cb = pan_rx_error_cb;
+void dw1000_pan_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t pan_cbs){
+    dw1000_pan_instance_t *pan = inst->pan;
+    memcpy(&pan->pan_cbs, &pan_cbs, sizeof(dw1000_extension_callbacks_t));
+    dw1000_add_extension_callbacks(inst , pan_cbs);
 }
 
 /*! 
@@ -375,6 +381,7 @@ pan_rx_timeout_cb(dw1000_dev_instance_t * inst){
 			if(inst->extension_cb->rx_timeout_cb != NULL)
 	            inst->extension_cb->rx_timeout_cb(inst);
         }
+        return;
     }
     dw1000_pan_instance_t * pan = inst->pan;
     if (pan->status.timer_enabled)
