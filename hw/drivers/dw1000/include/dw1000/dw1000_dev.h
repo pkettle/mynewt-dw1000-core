@@ -55,12 +55,12 @@ typedef enum _dw1000_dev_role_t{
     TAG
 }dw1000_dev_role_t;
 
-typedef enum _dw1000_extension_service_id_t{
-    SERVICE_CCP,
-    SERVICE_PAN,
-    SERVICE_PROVISION,
-    SERVICE_RANGE
-}dw1000_extension_service_id_t;
+typedef enum _dw1000_extension_id_t{
+    DW1000_CCP,
+    DW1000_PAN,
+    DW1000_PROVISION,
+    DW1000_RANGE
+}dw1000_extension_id_t;
 
 typedef struct _dw1000_cmd{
     uint32_t reg:6;
@@ -132,7 +132,7 @@ typedef struct _dw1000_dev_rxdiag_t{
 struct _dw1000_dev_instance_t;
 typedef struct _dw1000_extension_callback_t dw1000_extension_callbacks_t;
 typedef struct _dw1000_extension_callback_t{
-    dw1000_extension_service_id_t id;
+    dw1000_extension_id_t id;
     void (* tx_complete_cb) (struct _dw1000_dev_instance_t *);
     void (* rx_complete_cb) (struct _dw1000_dev_instance_t *);
     void (* rx_timeout_cb)  (struct _dw1000_dev_instance_t *);
@@ -282,9 +282,7 @@ dw1000_dev_status_t dw1000_dev_wakeup(dw1000_dev_instance_t * inst);
 void dw1000_dev_enter_sleep_after_tx(dw1000_dev_instance_t * inst, int enable);
     
 void dw1000_add_extension_callbacks(dw1000_dev_instance_t* inst, dw1000_extension_callbacks_t callbacks);
-void dw1000_delete_extension_callbacks(dw1000_dev_instance_t* inst, dw1000_extension_service_id_t id);
-dw1000_extension_callbacks_t* dw1000_new_extension_callbacks(dw1000_dev_instance_t* inst);
-int dw1000_find_extension_callbacks_position(dw1000_dev_instance_t *inst, dw1000_extension_service_id_t id);
+void dw1000_remove_extension_callbacks(dw1000_dev_instance_t* inst, dw1000_extension_id_t id);
 
 #ifdef __cplusplus
 }

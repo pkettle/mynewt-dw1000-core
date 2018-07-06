@@ -184,10 +184,12 @@ dw1000_ccp_init(dw1000_dev_instance_t * inst, uint16_t nframes, uint64_t clock_m
  */
 void 
 dw1000_ccp_free(dw1000_ccp_instance_t * inst){
-    assert(inst);  
+    assert(inst); 
+    dw1000_dev_instance_t* dev_inst = inst->parent; 
 #if MYNEWT_VAL(CLOCK_CALIBRATION)
     clkcal_free(inst->clkcal);
-#endif            
+#endif           
+    dw1000_remove_extension_callbacks(dev_inst, DW1000_CCP);
     if (inst->status.selfmalloc){
         for (uint16_t i = 0; i < inst->nframes; i++)
             free(inst->frames[i]);
@@ -198,7 +200,7 @@ dw1000_ccp_free(dw1000_ccp_instance_t * inst){
 }
 
 void dw1000_ccp_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t ccp_cbs){
-    ccp_cbs.id = SERVICE_CCP;
+    ccp_cbs.id = DW1000_CCP;
     dw1000_add_extension_callbacks(inst , ccp_cbs);
 }
 /*! 

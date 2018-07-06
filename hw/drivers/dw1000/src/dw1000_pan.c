@@ -148,7 +148,8 @@ dw1000_pan_init(dw1000_dev_instance_t * inst,  dw1000_pan_config_t * config){
  */
 void 
 dw1000_pan_free(dw1000_dev_instance_t * inst){
-    assert(inst->pan);  
+    assert(inst->pan); 
+    dw1000_remove_extension_callbacks(inst, DW1000_PAN); 
     if (inst->status.selfmalloc)
         free(inst->pan);
     else
@@ -171,7 +172,7 @@ dw1000_pan_free(dw1000_dev_instance_t * inst){
  * returns none
  */
 void dw1000_pan_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t pan_cbs){
-    pan_cbs.id = SERVICE_PAN;
+    pan_cbs.id = DW1000_PAN;
     dw1000_add_extension_callbacks(inst , pan_cbs);
 }
 

@@ -31,6 +31,9 @@
 #include <dw1000/dw1000_phy.h>
 
 
+static int dw1000_find_extension_callbacks_position(dw1000_dev_instance_t *inst, dw1000_extension_id_t id);
+static dw1000_extension_callbacks_t* dw1000_new_extension_callbacks(dw1000_dev_instance_t* inst);
+
 dw1000_dev_status_t 
 dw1000_read(dw1000_dev_instance_t * inst, uint16_t reg, uint16_t subaddress, uint8_t * buffer, uint16_t length){
     assert(reg <= 0x3F); // Record number is limited to 6-bits.
@@ -365,7 +368,7 @@ dw1000_add_extension_callbacks(dw1000_dev_instance_t* inst, dw1000_extension_cal
     }
 }
 
-dw1000_extension_callbacks_t*
+static dw1000_extension_callbacks_t*
 dw1000_new_extension_callbacks(dw1000_dev_instance_t* inst){
     assert(inst);
     dw1000_extension_callbacks_t* new_cbs = (dw1000_extension_callbacks_t*)malloc(sizeof(dw1000_extension_callbacks_t));
@@ -379,7 +382,7 @@ dw1000_new_extension_callbacks(dw1000_dev_instance_t* inst){
 }
 
 void
-dw1000_delete_extension_callbacks(dw1000_dev_instance_t* inst, dw1000_extension_service_id_t id){
+dw1000_remove_extension_callbacks(dw1000_dev_instance_t* inst, dw1000_extension_id_t id){
     int count = 0;
     dw1000_extension_callbacks_t* temp = inst->extension_cb;
     int pos = dw1000_find_extension_callbacks_position(inst, id);
@@ -401,8 +404,8 @@ dw1000_delete_extension_callbacks(dw1000_dev_instance_t* inst, dw1000_extension_
     }
 }
 
-int
-dw1000_find_extension_callbacks_position(dw1000_dev_instance_t *inst, dw1000_extension_service_id_t id){
+static int
+dw1000_find_extension_callbacks_position(dw1000_dev_instance_t *inst, dw1000_extension_id_t id){
     int count = 0;
     dw1000_extension_callbacks_t* temp = inst->extension_cb;
     while(temp != NULL){
