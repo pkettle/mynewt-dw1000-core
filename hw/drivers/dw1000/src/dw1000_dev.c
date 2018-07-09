@@ -372,12 +372,7 @@ static dw1000_extension_callbacks_t*
 dw1000_new_extension_callbacks(dw1000_dev_instance_t* inst){
     assert(inst);
     dw1000_extension_callbacks_t* new_cbs = (dw1000_extension_callbacks_t*)malloc(sizeof(dw1000_extension_callbacks_t));
-    new_cbs->next = NULL;
-    new_cbs->previous = NULL;
-    new_cbs->tx_complete_cb = NULL;
-    new_cbs->rx_complete_cb = NULL;
-    new_cbs->rx_timeout_cb = NULL;
-    new_cbs->rx_error_cb = NULL;
+    memset(new_cbs, 0, sizeof(dw1000_extension_callbacks_t));
     return new_cbs;
 }
 

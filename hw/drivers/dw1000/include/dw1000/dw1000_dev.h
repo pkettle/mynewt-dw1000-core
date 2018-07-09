@@ -150,20 +150,11 @@ typedef struct _dw1000_dev_instance_t{
     void (* rx_complete_cb) (struct _dw1000_dev_instance_t *);
     void (* rx_timeout_cb) (struct _dw1000_dev_instance_t *);
     void (* rx_error_cb) (struct _dw1000_dev_instance_t *);
-/*
-    struct _dw1000_mac_callbacks_t;
-    struct _dw1000_rng_callbacks_t;
-    struct _dw1000_rng_callbacks_extension_t;
-    struct _dw1000_lwip_callbacks_t;
- */   
     void (* rng_tx_complete_cb) (struct _dw1000_dev_instance_t *);
     void (* rng_rx_complete_cb) (struct _dw1000_dev_instance_t *);
     void (* rng_rx_timeout_cb) (struct _dw1000_dev_instance_t *);
-    void (* rng_rx_timeout_extension_cb) (struct _dw1000_dev_instance_t *);
     void (* rng_rx_error_cb) (struct _dw1000_dev_instance_t *);
-    void (* rng_rx_error_extension_cb) (struct _dw1000_dev_instance_t *);
     void (* rng_tx_final_cb) (struct _dw1000_dev_instance_t *);
-    void (* rng_interface_extension_cb) (struct _dw1000_dev_instance_t *);
     void (* rng_complete_cb) (struct _dw1000_dev_instance_t *);
     dw1000_extension_callbacks_t * extension_cb;
 #if MYNEWT_VAL(DW1000_LWIP)
@@ -171,27 +162,6 @@ typedef struct _dw1000_dev_instance_t{
     void (* lwip_rx_complete_cb) (struct _dw1000_dev_instance_t *);
     void (* lwip_rx_timeout_cb) (struct _dw1000_dev_instance_t *);
     void (* lwip_rx_error_cb) (struct _dw1000_dev_instance_t *);
-#endif
-
-#if MYNEWT_VAL(DW1000_CLOCK_CALIBRATION)
-    void (* ccp_rx_complete_cb) (struct _dw1000_dev_instance_t *);
-    void (* ccp_tx_complete_cb) (struct _dw1000_dev_instance_t *);
-#endif
-
-#if MYNEWT_VAL(DW1000_PAN)
-    void (* pan_rx_complete_cb) (struct _dw1000_dev_instance_t *);
-    void (* pan_tx_complete_cb) (struct _dw1000_dev_instance_t *);
-    void (* pan_rx_timeout_cb) (struct _dw1000_dev_instance_t *);    
-#endif
-#if MYNEWT_VAL(DW1000_RANGE)
-    void (* range_complete_cb) (struct _dw1000_dev_instance_t *);
-    void (* range_error_cb) (struct _dw1000_dev_instance_t *);
-#endif
-#if MYNEWT_VAL(DW1000_PROVISION)
-    void (* provision_tx_complete_cb) (struct _dw1000_dev_instance_t *);
-    void (* provision_rx_complete_cb) (struct _dw1000_dev_instance_t *);
-    void (* provision_rx_timeout_cb) (struct _dw1000_dev_instance_t *);
-    void (* provision_rx_error_cb) (struct _dw1000_dev_instance_t *);
 #endif
     union {
         uint16_t fctrl;                         // Reported frame control 
