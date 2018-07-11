@@ -248,7 +248,7 @@ typedef struct _dw1000_dev_instance_t{
     struct _dw1000_lwip_instance_t * lwip;
 #endif
 #if MYNEWT_VAL(DW1000_PROVISION)
-    struct _dw1000_provision_instance_t *provision;
+    struct _dw1000_provision_instance_t * provision;
 #endif
 #if MYNEWT_VAL(DW1000_CCP_ENABLED)
     struct _dw1000_ccp_instance_t * ccp;
@@ -258,6 +258,9 @@ typedef struct _dw1000_dev_instance_t{
 #endif
 #if MYNEWT_VAL(DW1000_RANGE)
     struct _dw1000_range_instance_t * range;
+#endif
+#if MYNEWT_VAL(TDMA_ENABLED)
+    struct _tdma_instance_t * tdma;
 #endif
     dw1000_dev_rxdiag_t rxdiag;
     dw1000_dev_config_t config;
@@ -270,7 +273,7 @@ typedef struct _dw1000_dev_instance_t{
 
 /* Used to pass data to init function from bsp_hal */
 struct dw1000_dev_cfg {
-    struct os_mutex *spi_mutex;
+    struct os_mutex * spi_mutex;
     int spi_num;
 };
 
