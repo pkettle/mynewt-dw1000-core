@@ -44,6 +44,8 @@
 
 static void ccp_rx_complete_cb(dw1000_dev_instance_t * inst);
 static void ccp_tx_complete_cb(dw1000_dev_instance_t * inst);
+static void ccp_rx_error_cb(dw1000_dev_instance_t * inst);
+static void ccp_rx_timeout_cb(dw1000_dev_instance_t * inst);
 static dw1000_ccp_status_t dw1000_ccp_blink(dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode);
 #if MYNEWT_VAL(CLOCK_CALIBRATION) !=1
 static void ccp_postprocess(struct os_event * ev);
@@ -118,6 +120,7 @@ dw1000_ccp_instance_t *
 dw1000_ccp_init(dw1000_dev_instance_t * inst, uint16_t nframes, uint64_t clock_master){
     assert(inst);
     assert(nframes > 1);
+    dw1000_extension_callbacks_t ccp_cbs;
 
     if (inst->ccp == NULL ) {
         inst->ccp = (dw1000_ccp_instance_t *) malloc(sizeof(dw1000_ccp_instance_t) + nframes * sizeof(ccp_frame_t *)); 
@@ -150,14 +153,18 @@ dw1000_ccp_init(dw1000_dev_instance_t * inst, uint16_t nframes, uint64_t clock_m
     os_error_t err = os_sem_init(&inst->ccp->sem, 0x1); 
     assert(err == OS_OK);
 
-    dw1000_ccp_set_callbacks(inst, ccp_rx_complete_cb, ccp_tx_complete_cb);
-
 #if MYNEWT_VAL(CLOCK_CALIBRATION)
     inst->ccp->clkcal = clkcal_init(NULL, inst->ccp);      // Using clkcal process
 #else
     dw1000_ccp_set_postprocess(inst->ccp, &ccp_postprocess);            // Using default process
 #endif
 
+    ccp_cbs.tx_complete_cb = ccp_tx_complete_cb;
+    ccp_cbs.rx_complete_cb = ccp_rx_complete_cb;
+    ccp_cbs.rx_timeout_cb = ccp_rx_timeout_cb;
+    ccp_cbs.rx_error_cb = ccp_rx_error_cb;
+    
+    dw1000_ccp_set_ext_callbacks(inst, ccp_cbs);
     dw1000_ccp_instance_t * ccp = inst->ccp; 
     ccp_frame_t * frame = ccp->frames[(ccp->idx)%ccp->nframes]; 
     frame->transmission_timestamp = dw1000_read_systime(inst);
@@ -177,10 +184,12 @@ dw1000_ccp_init(dw1000_dev_instance_t * inst, uint16_t nframes, uint64_t clock_m
  */
 void 
 dw1000_ccp_free(dw1000_ccp_instance_t * inst){
-    assert(inst);  
+    assert(inst); 
+    dw1000_dev_instance_t* dev_inst = inst->parent; 
 #if MYNEWT_VAL(CLOCK_CALIBRATION)
     clkcal_free(inst->clkcal);
-#endif            
+#endif           
+    dw1000_remove_extension_callbacks(dev_inst, DW1000_CCP);
     if (inst->status.selfmalloc){
         for (uint16_t i = 0; i < inst->nframes; i++)
             free(inst->frames[i]);
@@ -190,13 +199,10 @@ dw1000_ccp_free(dw1000_ccp_instance_t * inst){
         inst->status.initialized = 0;
 }
 
-void 
-dw1000_ccp_set_callbacks(dw1000_dev_instance_t * inst, dw1000_dev_cb_t ccp_rx_complete_cb, dw1000_dev_cb_t ccp_tx_complete_cb){
-    inst->ccp_rx_complete_cb = ccp_rx_complete_cb;
-    inst->ccp_tx_complete_cb = ccp_tx_complete_cb;
+void dw1000_ccp_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t ccp_cbs){
+    ccp_cbs.id = DW1000_CCP;
+    dw1000_add_extension_callbacks(inst , ccp_cbs);
 }
-
-
 /*! 
  * @fn dw1000_ccp_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * ccp_postprocess)
  *
@@ -235,12 +241,15 @@ static void ccp_postprocess(struct os_event * ev){
     ccp_frame_t * frame = ccp->frames[(ccp->idx)%ccp->nframes]; 
 
     printf("{\"utime\":%lu,\"ccp\":[%llu,%llu],\"correction\":%lu,\"seq_num\":%d}\n", 
-       os_cputime_ticks_to_usecs(os_cputime_get32()),
-       frame->reception_timestamp,
-       (uint64_t)((uint64_t)(frame->reception_timestamp) - (uint64_t)(previous_frame->reception_timestamp)) & 0xFFFFFFFFF,
-       *(uint32_t *)&frame->correction_factor,
-       frame->seq_num
-       );
+        os_cputime_ticks_to_usecs(os_cputime_get32()),
+        frame->reception_timestamp,
+        (uint64_t)((uint64_t)(frame->reception_timestamp) - (uint64_t)(previous_frame->reception_timestamp)) & 0xFFFFFFFFF,
+        *(uint32_t *)&frame->correction_factor,
+        frame->seq_num
+    );
+    dw1000_dev_instance_t* inst = ccp->parent;
+    inst->control = inst->control_rx_context;
+    dw1000_restart_rx(inst,inst->control_rx_context);
 }
 #endif
 
@@ -260,6 +269,28 @@ static void ccp_postprocess(struct os_event * ev){
  */
 static void 
 ccp_rx_complete_cb(dw1000_dev_instance_t * inst){
+    if (inst->fctrl_array[0] == FCNTL_IEEE_BLINK_CCP_64){
+        // CCP Packet Received
+        uint64_t clock_master;
+        dw1000_read_rx(inst, (uint8_t *) &clock_master, offsetof(ieee_blink_frame_t,long_address), sizeof(uint64_t));
+        if(inst->clock_master != clock_master){
+            dw1000_restart_rx(inst, inst->control_rx_context);
+            return;
+       }
+    }else{
+        //The packet is not intended for the CCP. So pass it on to next item on list
+        //If there is not cb in the list go to receive mode again as it is a spurious packet
+        //inst->extension_cb = (dw1000_extension_callbacks_t*)(inst->extension_cb->next);
+        if(inst->extension_cb->next != NULL){
+            inst->extension_cb = inst->extension_cb->next;
+            if(inst->extension_cb->rx_complete_cb != NULL)
+                inst->extension_cb->rx_complete_cb(inst);
+        }
+        else{
+           dw1000_restart_rx(inst, inst->control_rx_context);
+        }
+        return;
+    }
     dw1000_ccp_instance_t * ccp = inst->ccp; 
     ccp_frame_t * frame = ccp->frames[(++ccp->idx)%ccp->nframes];
     
@@ -272,6 +303,10 @@ ccp_rx_complete_cb(dw1000_dev_instance_t * inst){
     ccp->status.valid |= ccp->idx > ccp->nframes;
     if (ccp->config.postprocess && ccp->status.valid) 
         os_eventq_put(os_eventq_dflt_get(), &ccp->callout_postprocess.c_ev);
+   else{
+        inst->control = inst->control_rx_context;
+        dw1000_restart_rx(inst,inst->control_rx_context);
+    }
 }
 
 
@@ -294,6 +329,17 @@ ccp_rx_complete_cb(dw1000_dev_instance_t * inst){
  */
 static void 
 ccp_tx_complete_cb(dw1000_dev_instance_t * inst){
+    if (inst->fctrl_array[0] != FCNTL_IEEE_BLINK_CCP_64){
+        //The packet is not intended for the CCP. So pass it on to next item on list
+        //If there is not cb in the list go to receive mode again as it is a spurious packet
+        //inst->extension_cb = (dw1000_extension_callbacks_t*)(inst->extension_cb->next);
+        if(inst->extension_cb->next != NULL){
+            inst->extension_cb = inst->extension_cb->next;
+            if(inst->extension_cb->tx_complete_cb != NULL)
+                inst->extension_cb->tx_complete_cb(inst);
+        }
+        return;
+    }
     //Advance frame idx 
     dw1000_ccp_instance_t * ccp = inst->ccp; 
     ccp_frame_t * previous_frame = ccp->frames[(ccp->idx)%ccp->nframes]; 
@@ -310,6 +356,53 @@ ccp_tx_complete_cb(dw1000_dev_instance_t * inst){
     os_sem_release(&inst->ccp->sem);  
 }
 
+/*! 
+ * @fn ccp_rx_error_cb(dw1000_dev_instance_t * inst)
+ *
+ * A place holder for rx_error_cb for ccp.
+ *
+ * input parameters
+ * @param inst - dw1000_dev_instance_t * 
+ *
+ * output parameters
+ *
+ * returns none 
+ */
+static void
+ccp_rx_error_cb(dw1000_dev_instance_t * inst){
+    /* Place holder */
+    if(inst->fctrl_array[0] != FCNTL_IEEE_BLINK_CCP_64){
+        if(inst->extension_cb->next != NULL){
+            inst->extension_cb = inst->extension_cb->next;
+            if(inst->extension_cb->rx_error_cb != NULL)
+                inst->extension_cb->rx_error_cb(inst);
+        }
+    }
+}
+
+/*! 
+ * @fn ccp_rx_timeout_cb(dw1000_dev_instance_t * inst)
+ *
+ * A place holder for rx_error_cb for ccp.
+ *
+ * input parameters
+ * @param inst - dw1000_dev_instance_t * 
+ *
+ * output parameters
+ *
+ * returns none 
+ */
+static void
+ccp_rx_timeout_cb(dw1000_dev_instance_t * inst){
+    /* Place holder */
+    if(inst->fctrl_array[0] != FCNTL_IEEE_BLINK_CCP_64){
+        if(inst->extension_cb->next != NULL){
+            inst->extension_cb = inst->extension_cb->next;
+            if(inst->extension_cb->rx_timeout_cb != NULL)
+                inst->extension_cb->rx_timeout_cb(inst);
+        }
+    }
+}
 
 /*! 
  * @fn dw1000_ccp_blink(dw1000_dev_instance_t * inst, dw1000_ccp_modes_t mode)

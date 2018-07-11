@@ -1062,7 +1062,7 @@ static void dw1000_interrupt_ev_cb(struct os_event *ev)
         }
 
         // Call the corresponding ranging frame services callback if present
-        if(inst->rng_rx_complete_cb != NULL && inst->status.rx_ranging_frame) 
+        if(inst->rng_rx_complete_cb != NULL && inst->status.rx_ranging_frame)
             inst->rng_rx_complete_cb(inst);
         // Call the corresponding non-ranging frame callback if present
         else if(inst->rx_complete_cb != NULL)
@@ -1089,8 +1089,6 @@ static void dw1000_interrupt_ev_cb(struct os_event *ev)
         // Call the corresponding ranging frame services callback if present
         if(inst->rng_rx_timeout_cb != NULL )
             inst->rng_rx_timeout_cb(inst);
-        if(inst->rng_rx_timeout_extension_cb != NULL)
-            inst->rng_rx_timeout_extension_cb(inst);     
         if(inst->rx_timeout_cb != NULL)
             inst->rx_timeout_cb(inst); 
     }
@@ -1109,8 +1107,6 @@ static void dw1000_interrupt_ev_cb(struct os_event *ev)
         // Call the corresponding ranging frame services callback if present
         if(inst->rng_rx_error_cb != NULL )
             inst->rng_rx_error_cb(inst);
-        if(inst->rng_rx_error_extension_cb != NULL)
-            inst->rng_rx_error_extension_cb(inst);       
         if(inst->rx_error_cb != NULL)
             inst->rx_error_cb(inst);
     }
