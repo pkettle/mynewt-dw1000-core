@@ -235,12 +235,12 @@ static void ccp_postprocess(struct os_event * ev){
     ccp_frame_t * frame = ccp->frames[(ccp->idx)%ccp->nframes]; 
 
     printf("{\"utime\":%lu,\"ccp\":[%llu,%llu],\"correction\":%lu,\"seq_num\":%d}\n", 
-        os_cputime_ticks_to_usecs(os_cputime_get32()),
-        frame->reception_timestamp,
-        (uint64_t)((uint64_t)(frame->reception_timestamp) - (uint64_t)(previous_frame->reception_timestamp)) & 0xFFFFFFFFF,
-        *(uint32_t *)&frame->correction_factor,
-        frame->seq_num
-    );
+       os_cputime_ticks_to_usecs(os_cputime_get32()),
+       frame->reception_timestamp,
+       (uint64_t)((uint64_t)(frame->reception_timestamp) - (uint64_t)(previous_frame->reception_timestamp)) & 0xFFFFFFFFF,
+       *(uint32_t *)&frame->correction_factor,
+       frame->seq_num
+       );
 }
 #endif
 
