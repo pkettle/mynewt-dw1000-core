@@ -19,28 +19,32 @@
  * under the License.
  */
 
-#ifndef _DW1000_HAL_H_
-#define _DW1000_HAL_H_
+
+#ifndef _BIQUAD_H_
+#define _BIQUAD_H_
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
-#ifdef __cplusplus
-extern "C" {
+#define BIQUAD_N 3 
+
+typedef struct _biquad_status_t{
+    uint16_t selfmalloc:1;
+    uint16_t initialized:1;
+}biquad_status_t;
+
+typedef struct _biquad_instance_t{
+	biquad_status_t status;
+	float num[BIQUAD_N];
+	float den[BIQUAD_N];
+}biquad_instance_t;
+
+biquad_instance_t * biquad_init(biquad_instance_t * inst);
+void biquad_free(biquad_instance_t * inst);
+float biquad(biquad_instance_t * inst, float x, float b[], float a[], uint16_t clk);
+
 #endif
 
-#include <dw1000/dw1000_dev.h>
-#include <dw1000/dw1000_phy.h>
 
-struct _dw1000_dev_instance_t * hal_dw1000_inst(uint8_t idx);
-void hal_dw1000_reset(struct _dw1000_dev_instance_t * inst);
-void hal_dw1000_read(struct _dw1000_dev_instance_t * inst, const uint8_t * cmd, uint8_t cmd_size, uint8_t * buffer, uint16_t length);
-void hal_dw1000_write(struct _dw1000_dev_instance_t * inst, const uint8_t * cmd, uint8_t cmd_size, uint8_t * buffer, uint16_t length);
-void hal_dw1000_wakeup(struct _dw1000_dev_instance_t * inst);
-int hal_dw1000_get_rst(struct _dw1000_dev_instance_t * inst);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _DW1000_HAL_H_ */

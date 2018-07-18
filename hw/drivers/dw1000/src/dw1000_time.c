@@ -68,7 +68,7 @@ dw1000_time_instance_t * dw1000_time_init(dw1000_dev_instance_t * inst, uint16_t
     inst->time->slot_id = slot_id;
     inst->time->ccp_interval = 0xFFFFFFFF;
     dw1000_time_set_postprocess(inst, &time_postprocess);
-    dw1000_ccp_set_postprocess(inst, &time_ev_cb);
+    dw1000_ccp_set_postprocess(inst->ccp, &time_ev_cb);
     dw1000_time_set_callbacks(inst, NULL);
     //CCP miss watchdog
     os_callout_init(&tdma_callout, os_eventq_dflt_get(), ccp_miss_cb, inst);

@@ -19,28 +19,29 @@
  * under the License.
  */
 
-#ifndef _DW1000_HAL_H_
-#define _DW1000_HAL_H_
 
-#include <stdlib.h>
-#include <stdint.h>
+#ifndef _SOSFILT_H_
+#define _SOSFILT_H_
 
-#ifdef __cplusplus
-extern "C" {
+#include <dsp/biquad.h>
+
+typedef struct _sos_status_t{
+    uint16_t selfmalloc:1;
+    uint16_t initialized:1;
+}sos_status_t;
+
+typedef struct _sos_instance_t {
+	sos_status_t status;
+	uint8_t clk;
+	uint8_t nsize;
+	biquad_instance_t * biquads[];
+}sos_instance_t;
+
+sos_instance_t * sosfilt_init(sos_instance_t * inst, uint16_t nsize);
+void sosfilt_free(sos_instance_t * inst);
+float sosfilt(sos_instance_t * inst, float x, float b[], float a[]);
+
 #endif
 
-#include <dw1000/dw1000_dev.h>
-#include <dw1000/dw1000_phy.h>
 
-struct _dw1000_dev_instance_t * hal_dw1000_inst(uint8_t idx);
-void hal_dw1000_reset(struct _dw1000_dev_instance_t * inst);
-void hal_dw1000_read(struct _dw1000_dev_instance_t * inst, const uint8_t * cmd, uint8_t cmd_size, uint8_t * buffer, uint16_t length);
-void hal_dw1000_write(struct _dw1000_dev_instance_t * inst, const uint8_t * cmd, uint8_t cmd_size, uint8_t * buffer, uint16_t length);
-void hal_dw1000_wakeup(struct _dw1000_dev_instance_t * inst);
-int hal_dw1000_get_rst(struct _dw1000_dev_instance_t * inst);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _DW1000_HAL_H_ */
