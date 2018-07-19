@@ -154,7 +154,7 @@ lwip_rx_cb(void *arg, struct raw_pcb *pcb, struct pbuf *p, const ip_addr_t *addr
     	inst->lwip->payload_ptr = p->payload;
 
 		if(inst->lwip_rx_complete_cb != NULL)
-	    inst->lwip_rx_complete_cb(inst);
+	    	inst->lwip_rx_complete_cb(inst);
     }
     memp_free(MEMP_PBUF_POOL,p);
     return 1;
@@ -214,7 +214,6 @@ dw1000_lwip_start_rx(dw1000_dev_instance_t * inst, uint16_t timeout){
 
     os_error_t err = os_sem_pend(&inst->lwip->data_sem, OS_TIMEOUT_NEVER);
     assert(err == OS_OK);
-
     dw1000_set_rx_timeout(inst, timeout);
     dw1000_start_rx(inst);
 }
@@ -234,7 +233,6 @@ rx_complete_cb(dw1000_dev_instance_t * inst){
 
     uint8_t buf_size = inst->lwip->buf_len;
     uint16_t pkt_addr;
-    memcpy(&pkt_addr,inst->lwip->data_buf[0]+4, 2);
 
     pkt_addr = (uint8_t)(*(inst->lwip->data_buf[0]+4)) + ((uint8_t)(*(inst->lwip->data_buf[0]+5)) << 8);
 
@@ -242,7 +240,12 @@ rx_complete_cb(dw1000_dev_instance_t * inst){
         char * data_buf = (char *)malloc(buf_size);
         assert(data_buf != NULL);
 
+        #if 1
         memcpy(data_buf,inst->lwip->data_buf[0]+4+2, buf_size);
+        #else
+        for (int i = 0; i < buf_size; ++i)
+        	*(data_buf+i) = *(inst->lwip->data_buf[0]+6+i);
+		#endif
 
         struct pbuf * buf = (struct pbuf *)data_buf;
         buf->payload = buf + sizeof(struct pbuf)/sizeof(struct pbuf);
@@ -354,9 +357,17 @@ dw1000_lwip_send(dw1000_dev_instance_t * inst, uint16_t payload_size, char * pay
 	assert(pb != NULL);
 	char * payload_lwip = (char *)pb->payload;
 
-	for (int i = 0; i < payload_size; ++i)
-		*(payload_lwip+i) = *(payload+i);
-
+	//printf("%s\n",__func__);
+	#if MYNEWT_VAL(DW1000_LWIP_P2P)
+	memcpy(payload_lwip, payload, payload_size);
+	#else
+	char *dst, *src;
+	dst = payload_lwip;
+	src = payload;
+	while(payload_size--){
+		*dst++ = *src++;
+	}
+	#endif
     raw_sendto(inst->lwip->pcb, pb, ipaddr);
     pbuf_free(pb);
 }
@@ -365,6 +376,7 @@ err_t
 dw1000_ll_output(struct netif *dw1000_netif, struct pbuf *p){
 
 	dw1000_dev_instance_t * inst = hal_dw1000_inst(0);
+
 	dw1000_lwip_write(inst, p, LWIP_BLOCKING);
 
 	err_t error = ERR_OK;
