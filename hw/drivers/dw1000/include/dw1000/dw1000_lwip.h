@@ -70,11 +70,11 @@ typedef struct _dw1000_lwip_instance_t{
 #if MYNEWT_VAL(DW1000_LWIP_P2P)
     struct _dw1000_lwip_p2p_instance_t * lwip_p2p;
 #endif
-    void (* complete_cb) (struct _dw1000_dev_instance_t *); 
-    void (* tx_complete_cb) (struct _dw1000_dev_instance_t *);
-    void (* rx_complete_cb) (struct _dw1000_dev_instance_t *);
-    void (* rx_timeout_cb) (struct _dw1000_dev_instance_t *);
-    void (* rx_error_cb) (struct _dw1000_dev_instance_t *);
+    void (* ext_complete_cb) (struct _dw1000_dev_instance_t *); 
+    void (* ext_tx_complete_cb) (struct _dw1000_dev_instance_t *);
+    void (* ext_rx_complete_cb) (struct _dw1000_dev_instance_t *);
+    void (* ext_rx_timeout_cb) (struct _dw1000_dev_instance_t *);
+    void (* ext_rx_error_cb) (struct _dw1000_dev_instance_t *);
 
     dw1000_lwip_config_t * config;
     dw1000_lwip_status_t status;

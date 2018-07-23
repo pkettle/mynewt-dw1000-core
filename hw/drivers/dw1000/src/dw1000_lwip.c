@@ -157,11 +157,9 @@ lwip_rx_cb(void *arg, struct raw_pcb *pcb, struct pbuf *p, const ip_addr_t *addr
 
 
 void lwip_rx_complete_cb(dw1000_dev_instance_t * inst){
-#if MYNEWT_VAL(DW1000_LWIP_P2P)
-        if(inst->lwip->rx_complete_cb != NULL){
-        	inst->lwip->rx_complete_cb(inst);
+        if(inst->lwip->ext_rx_complete_cb != NULL){
+        	inst->lwip->ext_rx_complete_cb(inst);
         }
-#endif	
 }
 
 dw1000_dev_status_t 
@@ -257,10 +255,8 @@ tx_complete_cb(dw1000_dev_instance_t * inst){
 		os_error_t err = os_sem_release(&inst->lwip->sem);
 		assert(err == OS_OK);
 	}
-#if MYNEWT_VAL(DW1000_LWIP_P2P)
-	if(inst->lwip->tx_complete_cb != NULL)
-		inst->lwip->tx_complete_cb(inst);
-#endif
+	if(inst->lwip->ext_tx_complete_cb != NULL)
+		inst->lwip->ext_tx_complete_cb(inst);
 }
 
 /**
@@ -273,10 +269,8 @@ rx_timeout_cb(dw1000_dev_instance_t * inst){
 	os_error_t err = os_sem_release(&inst->lwip->data_sem);
 	assert(err == OS_OK);
 	inst->lwip->status.rx_timeout_error = 1;
-#if MYNEWT_VAL(DW1000_LWIP_P2P)
-	if(inst->lwip->rx_timeout_cb != NULL)
-		inst->lwip->rx_timeout_cb(inst);
-#endif
+	if(inst->lwip->ext_rx_timeout_cb != NULL)
+		inst->lwip->ext_rx_timeout_cb(inst);
 }
 
 /**
@@ -289,10 +283,8 @@ rx_error_cb(dw1000_dev_instance_t * inst){
 	os_error_t err = os_sem_release(&inst->lwip->data_sem);
 	assert(err == OS_OK);
 	inst->lwip->status.rx_error = 1;
-#if MYNEWT_VAL(DW1000_LWIP_P2P)
-	if(inst->lwip->rx_error_cb != NULL)
-		inst->lwip->rx_error_cb(inst);
-#endif
+	if(inst->lwip->ext_rx_error_cb != NULL)
+		inst->lwip->ext_rx_error_cb(inst);
 }
 
 
