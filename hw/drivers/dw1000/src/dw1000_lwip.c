@@ -36,13 +36,8 @@
 #include <dw1000/dw1000_ftypes.h>
 #include <dw1000/dw1000_lwip.h>
 
-#if MYNEWT_VAL(DW1000_LWIP_P2P)
-#include <dw1000/dw1000_lwip_p2p.h>
-#endif
-
 #include <dw1000/dw1000_phy.h>
 #include "sysinit/sysinit.h"
-
 
 #include <lwip/pbuf.h>
 #include <lwip/netif.h>
@@ -163,8 +158,8 @@ lwip_rx_cb(void *arg, struct raw_pcb *pcb, struct pbuf *p, const ip_addr_t *addr
 
 void lwip_rx_complete_cb(dw1000_dev_instance_t * inst){
 #if MYNEWT_VAL(DW1000_LWIP_P2P)
-        if(inst->lwip_p2p_rx_complete_cb != NULL){
-        	inst->lwip_p2p_rx_complete_cb(inst);
+        if(inst->lwip->p2p_rx_complete_cb != NULL){
+        	inst->lwip->p2p_rx_complete_cb(inst);
         }
 #endif	
 }
@@ -240,12 +235,7 @@ rx_complete_cb(dw1000_dev_instance_t * inst){
         char * data_buf = (char *)malloc(buf_size);
         assert(data_buf != NULL);
 
-        #if 1
         memcpy(data_buf,inst->lwip->data_buf[0]+4+2, buf_size);
-        #else
-        for (int i = 0; i < buf_size; ++i)
-        	*(data_buf+i) = *(inst->lwip->data_buf[0]+6+i);
-		#endif
 
         struct pbuf * buf = (struct pbuf *)data_buf;
         buf->payload = buf + sizeof(struct pbuf)/sizeof(struct pbuf);
@@ -268,8 +258,8 @@ tx_complete_cb(dw1000_dev_instance_t * inst){
 		assert(err == OS_OK);
 	}
 #if MYNEWT_VAL(DW1000_LWIP_P2P)
-	if(inst->lwip_p2p_tx_complete_cb != NULL)
-		inst->lwip_p2p_tx_complete_cb(inst);
+	if(inst->lwip->p2p_tx_complete_cb != NULL)
+		inst->lwip->p2p_tx_complete_cb(inst);
 #endif
 }
 
@@ -284,8 +274,8 @@ rx_timeout_cb(dw1000_dev_instance_t * inst){
 	assert(err == OS_OK);
 	inst->lwip->status.rx_timeout_error = 1;
 #if MYNEWT_VAL(DW1000_LWIP_P2P)
-	if(inst->lwip_p2p_rx_timeout_cb != NULL)
-		inst->lwip_p2p_rx_timeout_cb(inst);
+	if(inst->lwip->p2p_rx_timeout_cb != NULL)
+		inst->lwip->p2p_rx_timeout_cb(inst);
 #endif
 }
 
@@ -300,8 +290,8 @@ rx_error_cb(dw1000_dev_instance_t * inst){
 	assert(err == OS_OK);
 	inst->lwip->status.rx_error = 1;
 #if MYNEWT_VAL(DW1000_LWIP_P2P)
-	if(inst->lwip_p2p_rx_error_cb != NULL)
-		inst->lwip_p2p_rx_error_cb(inst);
+	if(inst->lwip->p2p_rx_error_cb != NULL)
+		inst->lwip->p2p_rx_error_cb(inst);
 #endif
 }
 
@@ -357,17 +347,8 @@ dw1000_lwip_send(dw1000_dev_instance_t * inst, uint16_t payload_size, char * pay
 	assert(pb != NULL);
 	char * payload_lwip = (char *)pb->payload;
 
-	//printf("%s\n",__func__);
-	#if MYNEWT_VAL(DW1000_LWIP_P2P)
+	memset(payload_lwip, 0, payload_size);
 	memcpy(payload_lwip, payload, payload_size);
-	#else
-	char *dst, *src;
-	dst = payload_lwip;
-	src = payload;
-	while(payload_size--){
-		*dst++ = *src++;
-	}
-	#endif
     raw_sendto(inst->lwip->pcb, pb, ipaddr);
     pbuf_free(pb);
 }

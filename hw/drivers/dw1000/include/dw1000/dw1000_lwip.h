@@ -66,8 +66,16 @@ typedef struct _dw1000_lwip_instance_t{
     struct _dw1000_dev_instance_t * dev;
     struct os_sem sem;
     struct os_sem data_sem;
-    struct _ieee_std_frame_t * tx_frame;
-    struct _ieee_std_frame_t * rx_frame;
+
+#if MYNEWT_VAL(DW1000_LWIP_P2P)
+    struct _dw1000_lwip_p2p_instance_t * lwip_p2p;
+    void (* p2p_complete_cb) (struct _dw1000_dev_instance_t *); 
+    void (* p2p_tx_complete_cb) (struct _dw1000_dev_instance_t *);
+    void (* p2p_rx_complete_cb) (struct _dw1000_dev_instance_t *);
+    void (* p2p_rx_timeout_cb) (struct _dw1000_dev_instance_t *);
+    void (* p2p_rx_error_cb) (struct _dw1000_dev_instance_t *);
+#endif
+
     dw1000_lwip_config_t * config;
     dw1000_lwip_status_t status;
     uint16_t nframes;
