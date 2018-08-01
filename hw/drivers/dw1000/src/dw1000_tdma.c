@@ -25,6 +25,7 @@
 #include <math.h>
 #include "sysinit/sysinit.h"
 #include "os/os.h"
+#include "os/queue.h"
 #include "bsp/bsp.h"
 #include "hal/hal_gpio.h"
 #include "hal/hal_bsp.h"
@@ -39,18 +40,25 @@
 #include <dw1000/dw1000_ccp.h>
 #endif
 
-#if MYNEWT_VAL(TDMA_ENABLED)
+#if MYNEWT_VAL(TDMA_ENABLED) 
 #include <dw1000/dw1000_tdma.h>
 
-static void superframe_timer_cb(struct os_event * ev);
+static void tdma_superframe_event_cb(struct os_event * ev);
 static void slot0_timer_cb(struct os_event * ev);
+#ifdef TDMA_TASKS_ENABLE
+static void tdma_tasks_init(struct _tdma_instance_t * inst);
+static void tdma_task(void *arg);
+#endif
 
-tdma_instance_t * tdma_init(struct _dw1000_dev_instance_t * inst, uint32_t period, uint16_t nslots){
+tdma_instance_t * 
+tdma_init(struct _dw1000_dev_instance_t * inst, uint32_t period, uint16_t nslots){
     assert(inst);
+    tdma_instance_t * tdma;
+
     if (inst->tdma == NULL) {
-        tdma_instance_t * tdma = (tdma_instance_t *) malloc(sizeof(struct _tdma_instance_t) + nslots * sizeof(struct os_callout *)); 
+        tdma = (tdma_instance_t *) malloc(sizeof(struct _tdma_instance_t) + nslots * sizeof(struct os_callout *)); 
         assert(tdma);
-        memset(tdma, 0, sizeof(tdma_instance_t) + nslots * sizeof(struct os_callout *));
+        memset(tdma, 0, sizeof(tdma_instance_t) + nslots * sizeof(struct os_callout * ));
         tdma->status.selfmalloc = 1;
         
         os_error_t err = os_mutex_init(&tdma->mutex);
@@ -58,16 +66,28 @@ tdma_instance_t * tdma_init(struct _dw1000_dev_instance_t * inst, uint32_t perio
         tdma->nslots = nslots; 
         tdma->period = period; 
         tdma->parent = inst;
+#ifdef TDMA_TASKS_ENABLE
+        tdma->task_prio = inst->task_prio + 1;
+#endif
         inst->tdma = tdma;
+    } else {
+        tdma = inst->tdma;
     }
-    os_callout_init(&inst->tdma->superframe_timer_cb, os_eventq_dflt_get(),  superframe_timer_cb, (void *) inst);
-    tdma_assign_slot(inst->tdma, slot0_timer_cb, 0, (void *) inst);
+    
+    tdma->status.awaiting_superframe = 1; 
 
+#if MYNEWT_VAL(DW1000_CCP_ENABLED)    
+    clkcal_set_postprocess(inst->ccp->clkcal, tdma_superframe_event_cb);
+#endif
+//    os_callout_init(&tdma->superframe_timer_cb, os_eventq_dflt_get(),  slot0_timer_cb, (void *) inst);
+    os_callout_init(&tdma->superframe_timer_cb, &tdma->eventq,  slot0_timer_cb, (void *) inst);
+    os_callout_reset(&tdma->superframe_timer_cb, OS_TICKS_PER_SEC * (tdma->period - MYNEWT_VAL(OS_LATENCY)) * 1e-6);
     inst->status.initialized = true;
-
+#ifdef TDMA_TASKS_ENABLE
+    tdma_tasks_init(tdma);
+#endif
     return inst->tdma;
 }
-
 
 void 
 tdma_free(tdma_instance_t * inst){
@@ -79,8 +99,39 @@ tdma_free(tdma_instance_t * inst){
 }
 
 
+#ifdef TDMA_TASKS_ENABLE
+/*! ------------------------------------------------------------------------------------------------------------------
+ * @fn tdma_tasks_init()
+ *
+ */
+static void tdma_tasks_init(struct _tdma_instance_t * inst)
+{
+    /* Check if the tasks are already initiated */
+    if (!os_eventq_inited(&inst->eventq))
+    {
+        /* Use a dedicate event queue for tdma events */
+        os_eventq_init(&inst->eventq);
+        os_task_init(&inst->task_str, "dw1000_tdma",
+                     tdma_task,
+                     (void *) inst,
+                     inst->task_prio, OS_WAIT_FOREVER,
+                     inst->task_stack,
+                     DW1000_DEV_TASK_STACK_SZ);
+    }       
+}
 
-void tdma_assign_slot(struct _tdma_instance_t * inst, void (* callout )(struct os_event *), uint16_t slot, void * arg){
+static void tdma_task(void *arg)
+{
+    tdma_instance_t * inst = arg;
+    while (1) {
+        os_eventq_run(&inst->eventq);
+    }
+}
+
+#endif
+
+void 
+tdma_assign_slot(struct _tdma_instance_t * inst, void (* callout )(struct os_event *), uint16_t slot, void * arg){
     assert(slot < inst->nslots);
     if (inst->timer_cb[slot] == NULL){
         struct os_callout * timer_cb = (struct os_callout * ) malloc(sizeof(struct os_callout)); 
@@ -90,10 +141,12 @@ void tdma_assign_slot(struct _tdma_instance_t * inst, void (* callout )(struct o
     }else{
         memset(inst->timer_cb[slot], 0, sizeof(struct os_callout));
     }
-    os_callout_init(inst->timer_cb[slot], os_eventq_dflt_get(), callout, arg);
+    //os_callout_init(inst->timer_cb[slot], os_eventq_dflt_get(), callout, arg);
+    os_callout_init(inst->timer_cb[slot], &inst->eventq, callout, arg);
 }
 
-void tdma_release_slot(struct _tdma_instance_t * inst, uint16_t slot){
+void 
+tdma_release_slot(struct _tdma_instance_t * inst, uint16_t slot){
     assert(slot < inst->nslots);
     assert(inst->timer_cb[slot]);
     free(inst->timer_cb[slot]);
@@ -114,7 +167,7 @@ void tdma_release_slot(struct _tdma_instance_t * inst, uint16_t slot){
  *
  * returns none 
  */
-void 
+static void 
 tdma_superframe_event_cb(struct os_event * ev){
     assert(ev != NULL);
     assert(ev->ev_arg != NULL);
@@ -127,69 +180,21 @@ tdma_superframe_event_cb(struct os_event * ev){
     dw1000_dev_instance_t * inst = ccp->parent;
     tdma_instance_t * tdma = inst->tdma;
 
-    os_callout_stop(&tdma->superframe_timer_cb);
-    os_callout_reset(&tdma->superframe_timer_cb, OS_TICKS_PER_SEC * (tdma->period - MYNEWT_VAL(OS_LATENCY)) * 1e-6);
-   
-    for (uint16_t i=1; i < tdma->nslots; i++) {
-        if (tdma->timer_cb[i]){
-            os_callout_stop(tdma->timer_cb[i]);
-            os_callout_reset(tdma->timer_cb[i], OS_TICKS_PER_SEC * (i * tdma->period/tdma->nslots - MYNEWT_VAL(OS_LATENCY)) * 1e-6);
-        }
-    }
-    os_error_t err = os_mutex_pend(&tdma->mutex, OS_WAIT_FOREVER);
-    tdma->idx = 0; 
-    err |= os_mutex_release(&tdma->mutex);
-    assert(err == OS_OK);   
-}
-
-/*! 
- * @fn superframe_timer_cb(struct os_event * ev)
- *
- * @brief This function is called prior to the next scheduled ccp event. The ccp event define the superframe or tdma slot0. 
- * This timer event provides loose coupling between the os and the tight dw1000 scheduling. This event should occur MYNEWT_VAL(OS_LATENCY) usec 
- * before the actual ccp event and perform an rx_start with a timeout set to a single tdma slot period.
- *
- * input parameters
- * @param inst - struct os_event *  
- *
- * output parameters
- *
- * returns none 
- */
-static void 
-superframe_timer_cb(struct os_event * ev){
-    assert(ev != NULL);
-    assert(ev->ev_arg != NULL);
-
-    uint32_t utime = os_cputime_ticks_to_usecs(os_cputime_get32());
-    printf("{\"utime\": %lu,\"msg\": \"superframe_timer_cb\"}\n",utime);
-  
-    dw1000_dev_instance_t * inst = (dw1000_dev_instance_t *)ev->ev_arg;
-    tdma_instance_t * tdma = inst->tdma;
-
-    dw1000_phy_forcetrxoff(inst);
-    dw1000_set_rx_timeout(inst, 0);
-    dw1000_start_rx(inst); 
-
-    os_callout_reset(&tdma->superframe_timer_cb, OS_TICKS_PER_SEC * (tdma->period) * 1e-6);
-   
-    if (tdma->timer_cb[0]){
-        os_callout_stop(tdma->timer_cb[0]);
-        os_eventq_put(tdma->timer_cb[0]->c_evq, &tdma->timer_cb[0]->c_ev);
-    }
-    for (uint16_t i=1; i < tdma->nslots; i++) {
-        if (tdma->timer_cb[i]){
-            os_callout_stop(tdma->timer_cb[i]);
-            os_callout_reset(tdma->timer_cb[i], OS_TICKS_PER_SEC * (i * tdma->period/tdma->nslots) * 1e-6);
-        }
-    }
-
-    os_error_t err = os_mutex_pend(&tdma->mutex, OS_WAIT_FOREVER);
-    tdma->idx++; 
-    err |= os_mutex_release(&tdma->mutex);
-    assert(err == OS_OK); 
+    tdma->status.awaiting_superframe = 0;
+    if (os_callout_queued(&tdma->superframe_timer_cb))
+        os_callout_stop(&tdma->superframe_timer_cb);
  
+    os_callout_reset(&tdma->superframe_timer_cb, OS_TICKS_PER_SEC * (tdma->period - MYNEWT_VAL(OS_LATENCY)) * 1e-6);
+
+    for (uint16_t i = 1; i < tdma->nslots - 1 ; i++) {
+        if (tdma->timer_cb[i]){
+            if (os_callout_queued(tdma->timer_cb[i]))
+                os_callout_stop(tdma->timer_cb[i]);
+            os_callout_reset(tdma->timer_cb[i], (uint32_t) floorf(OS_TICKS_PER_SEC * (i * tdma->period/tdma->nslots - MYNEWT_VAL(OS_LATENCY)) * 1e-6));
+        }
+    }
 }
+
 
 /*! 
  * @fn slot0_timer_cb(struct os_event * ev)
@@ -206,13 +211,34 @@ superframe_timer_cb(struct os_event * ev){
  */
 static void 
 slot0_timer_cb(struct os_event * ev){
-    //uint32_t utime = os_cputime_ticks_to_usecs(os_cputime_get32());
-    //printf("{\"utime\": %lu,\"msg\": \"slot0_timer_cb\"}\n",utime);
-    dw1000_dev_instance_t * inst = (dw1000_dev_instance_t *)ev->ev_arg;
 
-    dw1000_phy_forcetrxoff(inst); 
+    dw1000_dev_instance_t * inst = (dw1000_dev_instance_t *)ev->ev_arg;
+    tdma_instance_t * tdma = inst->tdma;
+    
+    uint32_t utime = os_cputime_ticks_to_usecs(os_cputime_get32());
+    printf("{\"utime\": %lu,\"msg\": \"slot0_timer_cb\"}\n",utime);
+ 
+    if (inst->status.sleeping)
+        dw1000_dev_wakeup(inst);
+  
+    for (uint16_t i = 1; i < tdma->nslots; i++) {
+        if (tdma->timer_cb[i]){
+            if (os_callout_queued(tdma->timer_cb[i]))
+                os_callout_stop(tdma->timer_cb[i]);
+        }
+    }
+ 
+    tdma->status.awaiting_superframe = 1; 
+    dw1000_phy_forcetrxoff(inst);
+    dw1000_set_delay_start(inst, 0);
     dw1000_set_rx_timeout(inst, 0);
-    dw1000_start_rx(inst);  
+    if(dw1000_start_rx(inst).start_rx_error){
+        uint32_t utime = os_cputime_ticks_to_usecs(os_cputime_get32());
+        printf("{\"utime\": %lu,\"msg\": \"slot0_timer_cb:start_rx_error\"}\n",utime);
+    }
+
+   // printf("{\"utime\": %lu,\"msg\": \"slot0_timer_cb_\"}\n",utime);
 }
+
 
 #endif //MYNEWT_VAL(TDMA_ENABLED)

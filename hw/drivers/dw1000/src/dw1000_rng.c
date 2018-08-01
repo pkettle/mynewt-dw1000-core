@@ -722,7 +722,7 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
 
                             if (dw1000_start_tx(inst).start_tx_error)
                                 os_sem_release(&rng->sem);  
-                            
+                          
                             if (inst->rng_complete_cb) {
                                 inst->rng_complete_cb(inst);
                             }

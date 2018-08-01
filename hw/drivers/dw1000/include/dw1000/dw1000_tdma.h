@@ -31,12 +31,15 @@ extern "C" {
 
 #include <dw1000/dw1000_dev.h>
 #include <dw1000/dw1000_phy.h>
+#include <os/queue.h>
 
 #if MYNEWT_VAL(TDMA_ENABLED)
+#define TDMA_TASKS_ENABLE
 
 typedef struct _tdma_status_t{
     uint16_t selfmalloc:1;
     uint16_t initialized:1;
+    uint16_t awaiting_superframe:1;
 }tdma_status_t;
 
 typedef struct _tdma_instance_t{
@@ -46,6 +49,13 @@ typedef struct _tdma_instance_t{
     uint16_t idx;
     uint16_t nslots;
     uint32_t period;
+#ifdef TDMA_TASKS_ENABLE
+    struct os_eventq eventq;
+    struct os_task task_str;
+    uint8_t task_prio;
+    os_stack_t task_stack[DW1000_DEV_TASK_STACK_SZ]
+        __attribute__((aligned(OS_STACK_ALIGNMENT)));
+#endif
     struct os_callout superframe_timer_cb;
     struct os_callout * timer_cb[];
 }tdma_instance_t; 
@@ -54,7 +64,6 @@ struct _tdma_instance_t * tdma_init(struct _dw1000_dev_instance_t * inst, uint32
 void tdma_free(struct _tdma_instance_t * inst);
 void tdma_assign_slot(struct _tdma_instance_t * inst, void (* callout )(struct os_event *), uint16_t slot, void * arg);
 void tdma_release_slot(struct _tdma_instance_t * inst, uint16_t slot);
-void tdma_superframe_event_cb(struct os_event * ev);
 
 #ifdef __cplusplus
 }

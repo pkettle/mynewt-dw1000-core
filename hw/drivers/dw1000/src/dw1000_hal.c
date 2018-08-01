@@ -75,10 +75,14 @@ static dw1000_dev_instance_t hal_dw1000_instances[]= {
 #if MYNEWT_VAL(DW1000_BIAS_CORRECTION_ENABLED)
                 .bias_correction_enable = 1,
 #endif
-                .rxauto_enable = 1
+                .LDE_enable = 1,
+                .LDO_enable = 0,
+                .sleep_enable = 1,
+                .wakeup_rx_enable = 1,     //!< Wakeup to Rx state
+                .rxauto_enable = 1         //!< On error re-enable
             },
             .spi_mutex = 0,
-            .interrupt_task_prio = 5
+            .task_prio = 5
     },
     #if  MYNEWT_VAL(DW1000_DEVICE_1)
     [1] = {
