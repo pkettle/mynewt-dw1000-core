@@ -95,7 +95,7 @@ syscfg.defs:
     OS_LATENCY:
         description: >
             OS Latency Guardband 
-        value: ((uint32_t){0x2800})
+        value: ((uint32_t){0x800})
     FS_XTALT_AUTOTUNE_ENABLED: 
         description: >
             Autotune XTALT to Clock Master

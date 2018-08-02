@@ -442,7 +442,7 @@ struct _dw1000_dev_status_t dw1000_start_tx(struct _dw1000_dev_instance_t * inst
             * Remedial action is cancle send and report error
             */
             sys_ctrl_reg = SYS_CTRL_TRXOFF; // This assumes the bit is in the lowest byte
-            dw1000_write_reg(inst, SYS_CTRL_ID, SYS_CTRL_OFFSET, (uint8_t) sys_ctrl_reg, sizeof(uint8_t));    
+            dw1000_write_reg(inst, SYS_CTRL_ID, SYS_CTRL_OFFSET, (uint8_t) sys_ctrl_reg, sizeof(uint8_t));  
         }
     }else{
         dw1000_write_reg(inst, SYS_CTRL_ID, SYS_CTRL_OFFSET, sys_ctrl_reg, sizeof(uint8_t));
@@ -457,10 +457,9 @@ struct _dw1000_dev_status_t dw1000_start_tx(struct _dw1000_dev_instance_t * inst
         .autoack_delay_enabled=0,
         .on_error_continue_enabled=0
     };
-
     err = os_mutex_release(&inst->mutex);  
-    assert(err == OS_OK); 
-    
+    assert(err == OS_OK);   
+
     DIAGMSG("{\"utime\": %lu,\"msg\": \"dw1000_start_tx_\"}\n",os_cputime_ticks_to_usecs(os_cputime_get32()));
 
     return inst->status;
@@ -1080,6 +1079,8 @@ static void dw1000_interrupt_ev_cb(struct os_event *ev)
         // See section "Transmit and automatically wait for response" in DW1000 User Manual
         //os_error_t err = os_sem_release(&inst->sem);  // unblock dw1000_start_tx
         //assert(err == OS_OK);
+        //os_error_t err = os_mutex_release(&inst->mutex);  
+        //assert(err == OS_OK);  
 
         if((inst->sys_status & SYS_STATUS_AAT) && inst->control.wait4resp_enabled){
             dw1000_write_reg(inst, SYS_CTRL_ID, SYS_CTRL_OFFSET, (uint16_t) SYS_CTRL_TRXOFF, sizeof(uint16_t)); // return to idle state
@@ -1134,9 +1135,8 @@ static void dw1000_interrupt_ev_cb(struct os_event *ev)
         // Because of an issue with receiver restart after error conditions, an RX reset must be applied 
         // after any error or timeout event to ensure the next good frame's timestamp is computed correctly.
         // See section "RX Message timestamp" in DW1000 User Manual.
-        //dw1000_phy_forcetrxoff(inst);
         dw1000_write_reg(inst, SYS_CTRL_ID, SYS_CTRL_OFFSET, (uint16_t)SYS_CTRL_TRXOFF, sizeof(uint16_t)) ; // Disable the radio
-        dw1000_phy_forcetrxoff(inst);
+        //dw1000_phy_forcetrxoff(inst);
         dw1000_phy_rx_reset(inst);
 
         // Call the corresponding ranging frame services callback if present

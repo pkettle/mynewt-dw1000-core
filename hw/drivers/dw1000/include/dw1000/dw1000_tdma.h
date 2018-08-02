@@ -42,6 +42,13 @@ typedef struct _tdma_status_t{
     uint16_t awaiting_superframe:1;
 }tdma_status_t;
 
+typedef struct _tdma_slot_t{
+    struct _tdma_instance_t * parent;
+    struct hal_timer timer;
+    struct os_callout event_cb;
+    uint16_t idx;
+}tdma_slot_t; 
+
 typedef struct _tdma_instance_t{
     struct _dw1000_dev_instance_t * parent;
     tdma_status_t status;
@@ -56,14 +63,13 @@ typedef struct _tdma_instance_t{
     os_stack_t task_stack[DW1000_DEV_TASK_STACK_SZ]
         __attribute__((aligned(OS_STACK_ALIGNMENT)));
 #endif
-    struct os_callout superframe_timer_cb;
-    struct os_callout * timer_cb[];
+    struct _tdma_slot_t * slot[];
 }tdma_instance_t; 
 
 struct _tdma_instance_t * tdma_init(struct _dw1000_dev_instance_t * inst, uint32_t period, uint16_t nslots);
 void tdma_free(struct _tdma_instance_t * inst);
-void tdma_assign_slot(struct _tdma_instance_t * inst, void (* callout )(struct os_event *), uint16_t slot, void * arg);
-void tdma_release_slot(struct _tdma_instance_t * inst, uint16_t slot);
+void tdma_assign_slot(struct _tdma_instance_t * inst, void (* callout )(struct os_event *), uint16_t idx, void * arg);
+void tdma_release_slot(struct _tdma_instance_t * inst, uint16_t idx);
 
 #ifdef __cplusplus
 }
