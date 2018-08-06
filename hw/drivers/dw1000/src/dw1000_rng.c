@@ -582,6 +582,10 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
 #endif
                         if (dw1000_start_tx(inst).start_tx_error)
                             os_sem_release(&rng->sem);  
+
+                        if (inst->rng_complete_cb)
+                            inst->rng_complete_cb(inst);
+                        
                         break;
                     }
                 case  DWT_SS_TWR_FINAL:
@@ -591,12 +595,14 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
                         // printf("DWT_SS_TWR_FINAL\n");
                         dw1000_rng_instance_t * rng = inst->rng; 
                         twr_frame_t * frame = rng->frames[(rng->idx)%rng->nframes];
+                        
                         if (inst->frame_len >= sizeof(twr_frame_final_t))
                             dw1000_read_rx(inst, frame->array, 0, sizeof(twr_frame_final_t));
                         os_sem_release(&rng->sem);
-                        if (inst->rng_complete_cb) {
+
+                        if (inst->rng_complete_cb) 
                             inst->rng_complete_cb(inst);
-                        }
+                        
 #if MYNEWT_VAL(DW1000_RANGE)
                         assert(inst->range_complete_cb != NULL);
                         inst->range_complete_cb(inst);
@@ -742,6 +748,7 @@ rng_rx_complete_cb(dw1000_dev_instance_t * inst)
                             inst->range_complete_cb(inst);
 #endif    
                             os_sem_release(&rng->sem);
+
                             if (inst->rng_complete_cb) {
                                 inst->rng_complete_cb(inst);
                             }

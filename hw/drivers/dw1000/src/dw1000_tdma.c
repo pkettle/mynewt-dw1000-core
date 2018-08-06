@@ -183,19 +183,20 @@ tdma_superframe_event_cb(struct os_event * ev){
     assert(ev != NULL);
     assert(ev->ev_arg != NULL);
 
-    uint32_t utime = os_cputime_ticks_to_usecs(os_cputime_get32());
-    printf("{\"utime\": %lu,\"msg\": \"superframe_event_cb\"}\n",utime);
+//    uint32_t utime = os_cputime_ticks_to_usecs(os_cputime_get32());
+//    printf("{\"utime\": %lu,\"msg\": \"superframe_event_cb\"}\n",utime);
 
     clkcal_instance_t * clkcal = (clkcal_instance_t *)ev->ev_arg;
     dw1000_ccp_instance_t * ccp = (void *)clkcal->ccp; 
     dw1000_dev_instance_t * inst = ccp->parent;
     tdma_instance_t * tdma = inst->tdma;
-
+    uint32_t cputime = os_cputime_get32() - os_cputime_usecs_to_ticks(MYNEWT_VAL(OS_LATENCY));
+    
     tdma->status.awaiting_superframe = 0;
-    os_cputime_timer_relative(&tdma->slot[0]->timer, (tdma->period - MYNEWT_VAL(OS_LATENCY)));
+    hal_timer_start_at(&tdma->slot[0]->timer, cputime + os_cputime_usecs_to_ticks(dw1000_dwt_usecs_to_usecs(tdma->period)));
     for (uint16_t i = 1; i < tdma->nslots; i++) {
         if (tdma->slot[i]){
-            os_cputime_timer_relative(&tdma->slot[i]->timer, i * tdma->period/tdma->nslots - MYNEWT_VAL(OS_LATENCY));
+            hal_timer_start_at(&tdma->slot[i]->timer, cputime + os_cputime_usecs_to_ticks(dw1000_dwt_usecs_to_usecs(i * tdma->period/tdma->nslots)));            
         }
     }
 }
@@ -221,8 +222,8 @@ slot0_event_cb(struct os_event * ev){
     tdma_instance_t * tdma = slot->parent;
     dw1000_dev_instance_t * inst = tdma->parent;
     
-    uint32_t utime = os_cputime_ticks_to_usecs(os_cputime_get32());
-    printf("{\"utime\": %lu,\"msg\": \"slot0_event_cb\"}\n",utime);
+//    uint32_t utime = os_cputime_ticks_to_usecs(os_cputime_get32());
+//    printf("{\"utime\": %lu,\"msg\": \"slot0_event_cb\"}\n",utime);
  
     if (inst->status.sleeping)
         dw1000_dev_wakeup(inst);
@@ -262,8 +263,8 @@ slot_timer_cb(void * arg){
     tdma_slot_t * slot = (tdma_slot_t *) arg;
     tdma_instance_t * tdma = slot->parent;
 
-//    uint32_t utime = os_cputime_ticks_to_usecs(os_cputime_get32());
-//    printf("{\"utime\": %lu,\"msg\": \"slot[%d]_timer_cb\"}\n",utime, slot->idx);
+  // uint32_t utime = os_cputime_ticks_to_usecs(os_cputime_get32());
+  //  printf("{\"utime\": %lu,\"msg\": \"slot[%d]_timer_cb\"}\n",utime, slot->idx);
 
 #ifdef TDMA_TASKS_ENABLE
     os_eventq_put(&tdma->eventq, &slot->event_cb.c_ev);
