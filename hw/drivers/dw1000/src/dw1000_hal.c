@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2018, Decawave Limited, All Rights Reserved
  * 
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,10 +19,20 @@
  * under the License.
  */
 
+/**
+ * @file dw1000_hal.c
+ * @author paul kettle
+ * @date 2018
+ * @brief Hardware Abstraction Layer
+ *
+ * @details This is the hal base class which utilises functions to perform the necessary actions at hal. 
+ *
+ */
+
 #include <stdint.h>
 #include <stddef.h>
 #include <assert.h>
-//#include <os/os_cputime.h>
+#include <os/os_cputime.h>
 #include <os/os_dev.h>
 #include <syscfg/syscfg.h>
 #include <hal/hal_spi.h>
@@ -51,13 +61,13 @@ static dw1000_dev_instance_t hal_dw1000_instances[]= {
                 .dataRate = DWT_BR_6M8,             //!< Data Rate {DWT_BR_110K, DWT_BR_850K or DWT_BR_6M8}
                 .rx = {
                     .pacLength = DWT_PAC8,          //!< Acquisition Chunk Size DWT_PAC8..DWT_PAC64 (Relates to RX preamble length)
-                    .preambleCodeIndex = 9,         //!< RX preamble code
+                    .preambleCodeIndex = 15,         //!< RX preamble code
                     .sfdType = 0,                   //!< Boolean should we use non-standard SFD for better performance
                     .phrMode = DWT_PHRMODE_STD,     //!< PHR mode {0x0 - standard DWT_PHRMODE_STD, 0x3 - extended frames DWT_PHRMODE_EXT}
                     .sfdTimeout = (256 + 1 + 8 - 8) //!< SFD timeout value (in symbols) (preamble length + 1 + SFD length - PAC size). Used in RX only. 
                 },
                 .tx ={
-                    .preambleCodeIndex = 9,         //!< TX preamble code
+                    .preambleCodeIndex = 15,         //!< TX preamble code
                     .preambleLength = DWT_PLEN_256  //!< DWT_PLEN_64..DWT_PLEN_4096
                 },
                 .txrf={
@@ -100,13 +110,13 @@ static dw1000_dev_instance_t hal_dw1000_instances[]= {
                 .dataRate = DWT_BR_6M8,             // Data rate. 
                 .rx = {
                     .pacLength = DWT_PAC8,          //!< Acquisition Chunk Size (Relates to RX preamble length)
-                    .preambleCodeIndex = 9,         //!< RX preamble code
+                    .preambleCodeIndex = 6,         //!< RX preamble code
                     .sfdType = 0,                   //!< Boolean should we use non-standard SFD for better performance
                     .phrMode = DWT_PHRMODE_STD,     //!< PHR mode {0x0 - standard DWT_PHRMODE_STD, 0x3 - extended frames DWT_PHRMODE_EXT}
                     .sfdTimeout = (256 + 1 + 8 - 8) //!< SFD timeout value (in symbols) (preamble length + 1 + SFD length - PAC size). Used in RX only. 
                 },
                 .tx ={
-                    .preambleCodeIndex = 9,         //!< TX preamble code
+                    .preambleCodeIndex = 6,         //!< TX preamble code
                     .preambleLength = DWT_PLEN_256  //!< DWT_PLEN_64..DWT_PLEN_4096
                 },
                 .txrf={
@@ -177,24 +187,36 @@ static dw1000_dev_instance_t hal_dw1000_instances[]= {
     #endif
 };
 #endif
+/**
+ * choose DW1000 instances based on parameters.
+ *
+ * @param idx  Indicates number of instances for the chosen bsp. 
+ * @return dw1000_dev_instance_t 
+ */
 
 struct _dw1000_dev_instance_t * 
 hal_dw1000_inst(uint8_t idx){
     
 #if  MYNEWT_VAL(DW1000_DEVICE_0) 
 #if  MYNEWT_VAL(DW1000_DEVICE_1)
-    assert(idx < 2);  // Only two instance for chosen bsp
+    assert(idx < 2);  //!< Only two instance for chosen bsp
 #else
-    assert(idx < 1);  // Only one instance for chosen bsp
+    assert(idx < 1);  //!< Only one instance for chosen bsp
 #endif
     return &hal_dw1000_instances[idx];
 #else
-    assert(0);  // no instance for chosen bsp
+    assert(0);  //!< no instance for chosen bsp
 #endif
 
 
 }
 
+/**
+ * This call resets all the gpio pins.
+ *
+ * @param inst  Pointer to dw1000_dev_instance_t.
+ * @return void
+ */
 void  
 hal_dw1000_reset(struct _dw1000_dev_instance_t * inst)
 {
@@ -210,6 +232,16 @@ hal_dw1000_reset(struct _dw1000_dev_instance_t * inst)
     os_cputime_delay_usecs(5000);
 }
 
+/**
+ * This call enables the API which is a blocking call to send a value on the SPI, returns the value received from the SPI slave.
+ *
+ * @param inst      Pointer to dw1000_dev_instance_t.
+ * @param cmd       Represents an array of masked attributes like reg,subindex,operation,extended,subaddress.
+ * @param cmd_size  Represents value based on the cmd attributes.
+ * @param buffer    Results are stored into the buffer.
+ * @param length    Represents buffer length.
+ * @return void
+ */
 void 
 hal_dw1000_read(struct _dw1000_dev_instance_t * inst, const uint8_t * cmd, uint8_t cmd_size, uint8_t * buffer, uint16_t length)
 {
@@ -234,6 +266,16 @@ hal_dw1000_read(struct _dw1000_dev_instance_t * inst, const uint8_t * cmd, uint8
     }
 }
 
+/**
+ * This call enables the API which is a blocking call to send a value on the SPI, returns the value received from the SPI slave.
+ *
+ * @param inst      Pointer to dw1000_dev_instance_t.
+ * @param cmd       Represents an array of masked attributes like reg,subindex,operation,extended,subaddress.
+ * @param cmd_size  Represents value based on the cmd attributes.
+ * @param buffer    Results are stored into the buffer.
+ * @param length    Represents buffer length. 
+ * @return void
+ */
 void 
 hal_dw1000_write(struct _dw1000_dev_instance_t * inst, const uint8_t * cmd, uint8_t cmd_size, uint8_t * buffer, uint16_t length)
 {
@@ -258,6 +300,13 @@ hal_dw1000_write(struct _dw1000_dev_instance_t * inst, const uint8_t * cmd, uint
     }
 }
 
+/**
+ * This call disables the spi after entering into critical section and wait for certain time before it enables the SPI 
+ * and exit from the critical section.
+ *
+ * @param inst  Pointer to dw1000_dev_instance_t. 
+ * @return void
+ */
 void 
 hal_dw1000_wakeup(struct _dw1000_dev_instance_t * inst)
 {
@@ -290,8 +339,12 @@ hal_dw1000_wakeup(struct _dw1000_dev_instance_t * inst)
     OS_EXIT_CRITICAL(sr);
 }
 
-/* Read the current level of the rst pin.
- * When sleeping dw1000 will let this pin should go low */
+/**
+ * Read the current level of the rst pin.When sleeping dw1000 will let this pin should go low. 
+ * 
+ * @param inst  Pointer to dw1000_dev_instance_t
+ * @return status of rst_pin
+ */
 int
 hal_dw1000_get_rst(struct _dw1000_dev_instance_t * inst)
 {

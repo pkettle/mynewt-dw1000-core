@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2018, Decawave Limited, All Rights Reserved
  * 
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,6 +18,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
+/**
+ * @file dw1000_provision.c
+ * @author paul kettle
+ * @date 2018
+ * @brief provisioning
+ *
+ * @details This is the provision base class that scans for the available nodes and store their addresses.
+ *
+ */
+  
+
+
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -64,18 +77,13 @@ provision_timer_init(dw1000_dev_instance_t * inst) {
     os_callout_reset(&provision->provision_callout_timer,provision->config.period*OS_TICKS_PER_SEC);
 }
 
-/*! 
- * @fn dw1000_provision_init(dw1000_dev_instance_t * inst)
+/** 
+ * Allocate resources on TAG & Anchor for provisioning
+ * can be freed on TAG & ANCHOR on once provision have been completed.
  *
- * @brief Allocate resources on TAG & Anchor for provisioning
- * can be freeded on TAG & ANCHOR on once provision have been completed
- *
- * input parameters
- * @param inst - Pointer to dev instance
- *
- * output parameters
- *
- * returns dw1000_provision_instance_t*
+ * @param inst    Pointer to dw1000_dev_instance_t.
+ * @param config  Configures provision features.
+ * @return dw1000_provision_instance_t
  */
 dw1000_provision_instance_t*
 dw1000_provision_init(dw1000_dev_instance_t * inst, dw1000_provision_config_t config){
@@ -111,17 +119,11 @@ dw1000_provision_init(dw1000_dev_instance_t * inst, dw1000_provision_config_t co
     return inst->provision;
 }
 
-/*! 
- * @fn dw1000_provision_free(dw1000_dev_instance_t * inst)
+/**
+ * Free resources and restore default behaviour. 
  *
- * @brief Free resources and restore default behaviour. 
- *
- * input parameters
- * @param inst - dw1000_dev_instance_t * inst
- *
- * output parameters
- *
- * returns none
+ * @param inst  Pointer to dw1000_dev_instance_t. 
+ * @return void
  */
 void
 dw1000_provision_free(dw1000_dev_instance_t * inst){
@@ -138,18 +140,12 @@ dw1000_provision_free(dw1000_dev_instance_t * inst){
         inst->status.initialized = 0;
 }
 
-/*! 
- * @fn dw1000_provision_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t provision_cbs)
+/** 
+ * Sets the callbacks to be called for provision related rx_complete, rx_timeout, etc in a linked list.
  *
- * @brief Sets the callbacks to be called for provision related rx_complete, rx_timeout, etc in a linked list
- *
- * input parameters
- * @param inst - dw1000_dev_instance_t *
- * @param provision_cbs - dw1000_extension_callbacks_t 
- *  
- * output parameters
- *  
- * returns none
+ * @param inst             Pointer to dw1000_dev_instance_t.
+ * @param provision_cbs    Structure to dw1000_extension_callbacks_t.
+ * @return void
  */
 void
 dw1000_provision_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t provision_cbs){
@@ -158,18 +154,12 @@ dw1000_provision_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extensio
 }
 
 
-/*! 
- * @fn dw1000_provision_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * provision_postprocess)
+/** 
+ * Sets post_process in provision.Required on provision intiator.
  *
- * @brief Replace default behavor. Required on provision intiator
- *
- * input parameters
- * @param inst - dw1000_dev_instance_t * 
- * @param provision_postprocess - os_event_fn*
- *
- * output parameters
- *
- * returns none
+ * @param inst                   Pointer to dw1000_dev_instance_t.
+ * @param provision_postprocess  Pointer to os_event_fn.
+ * @return void
  */
 void 
 dw1000_provision_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * provision_postprocess){
@@ -180,19 +170,13 @@ dw1000_provision_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * pro
     provision->config.postprocess = true;
 }
 
-/*! 
- * @fn provision_postprocess(struct os_event * ev)
- *
- * @brief This a template which should be replaced by the provision intiator by a event that can just pass the
+/** 
+ * This is a template which should be replaced by the provision intiator by a event that can just pass the
  * information to some other layers like application to kick start some other event. Currently just prints out
- * the information about the provisioned devices
+ * the information about the provisioned devices.
  *
- * input parameters
- * @param ev - struct os_event *
- *
- * output parameters
- *
- * returns none
+ * @param ev    Pointer to os_events.     
+ * @return void
  */
 static void
 provision_postprocess(struct os_event * ev){
@@ -201,20 +185,14 @@ provision_postprocess(struct os_event * ev){
     printf("Default post process implementation \n");
 }
 
-/*! 
- * @fn provision_rx_complete_cb(dw1000_dev_instance_t * inst)
- *
- * @brief This is an internal static function that executes on both the provision intiator and the TAG/ANCHOR 
+/** 
+ * This is an internal static function that executes on both the provision intiator and the TAG/ANCHOR 
  * that replies to the beacon. On the provision intiator the postprecess function can send the database to the application
  * and kick start some other task like ranging or so. In responder there is no need of post process and should just go to
- * rx mode again 
+ * rx mode again. 
  *
- * input parameters
- * @param inst - dw1000_dev_instance_t * 
- *
- * output parameters
- *
- * returns none
+ * @param inst   Pointer to dw1000_dev_instance_t.
+ * @return void
  */
 static void
 provision_rx_complete_cb(dw1000_dev_instance_t* inst){
@@ -310,17 +288,11 @@ provision_rx_complete_cb(dw1000_dev_instance_t* inst){
     }
 }
 
-/*! 
- * @fn dw1000_rx_timeout_cb(dw1000_dev_instance_t * inst)
+/** 
+ * Handles the rx_timeout case for provisioning.
  *
- * @brief Handle the rx timeout case for provisioning
- *
- * input parameters
- * @param inst - dw1000_dev_instance_t * inst
- *
- * output parameters
- *
- * returns none
+ * @param inst      pointer to dw1000_dev_instance_t.
+ * @return void
  */
 static void
 provision_rx_timeout_cb(dw1000_dev_instance_t * inst){
@@ -349,17 +321,11 @@ provision_rx_timeout_cb(dw1000_dev_instance_t * inst){
     }
 }
 
-/*! 
- * @fn dw1000_rx_error_cb(dw1000_dev_instance_t * inst)
+/** 
+ * Handles the rx_error case for provisioning.
  *
- * @brief Handle the rx error case for provisioning
- *
- * input parameters
- * @param inst - dw1000_dev_instance_t * inst
- *
- * output parameters
- *
- * returns none
+ * @param inst    Pointer to dw1000_dev_instance_t.
+ * @return void
  */
 static void
 provision_rx_error_cb(dw1000_dev_instance_t * inst){
@@ -383,17 +349,11 @@ provision_rx_error_cb(dw1000_dev_instance_t * inst){
     }
 }
 
-/*! 
- * @fn provision_tx_error_cb(dw1000_dev_instance_t * inst)
+/** 
+ * Handles the tx_error case for provisioning.
  *
- * @brief Handle the tx error case for provisioning
- *
- * input parameters
- * @param inst - dw1000_dev_instance_t * inst
- *
- * output parameters
- *
- * returns none
+ * @param inst   Pointer to dw1000_dev_instance_t.
+ * @return void
  */
 static void
 provision_tx_error_cb(dw1000_dev_instance_t * inst){
@@ -407,17 +367,11 @@ provision_tx_error_cb(dw1000_dev_instance_t * inst){
     }
 }
 
-/*! 
- * @fn dw1000_tx_complete_cb(dw1000_dev_instance_t * inst)
+/** 
+ * Handles the tx_complete case.
  *
- * @brief Handle the tx complete case. If required add the support
- *
- * input parameters
- * @param inst - dw1000_dev_instance_t * inst
- *
- * output parameters
- *
- * returns none
+ * @param inst pointer to dw1000_dev_instance_t
+ * @return void
  */
 static void
 provision_tx_complete_cb(dw1000_dev_instance_t * inst){
@@ -431,19 +385,13 @@ provision_tx_complete_cb(dw1000_dev_instance_t * inst){
 	}
 }
 
-/*! 
- * @fn dw1000_provision_request(dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode)
+/** 
+ * Provisioning is a phase where a Tag finds all the adjucent Nodes or Nodes find 
+ * nodes adjacent to it. The outcome is a database of all the nearby nodes.
  *
- * @brief Provisioning is a phase where a Tag finds all the adjucent Nodes or Nodes find 
- * nodes adjacent to it. The outcome is a database of all the nearby nodes   
- *
- * input parameters
- * @param inst - dw1000_dev_instance_t * 
- * @param mode - dw1000_devmodes_t for DWT_BLOCKING, DWT_NONBLOCKING.
- *
- * output parameters
- *
- * returns dw1000_provision_status_t 
+ * @param inst  Pointer to dw1000_dev_instance_t.
+ * @param mode  dw1000_devmodes_t for DWT_BLOCKING, DWT_NONBLOCKING.
+ * @return dw1000_provision_status_t 
  */
 dw1000_provision_status_t 
 dw1000_provision_request(dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode){
@@ -476,19 +424,13 @@ dw1000_provision_request(dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode){
    return provision->status;
 }
 
-/*!
- * @fn dw1000_provision_start(dw1000_dev_instance_t * inst)
- *
- * @brief This function schedules the provision timer event.This function
+/**
+ * This function schedules the provision timer event.This function
  * should be called for a TAG/NODE which should send a BEACON and the other
- * node should be in receive mode
+ * node should be in receive mode.
  *
- * input parameters
- * @param inst - dw1000_dev_instance_t * inst
- *
- * output parameters
- *
- * returns none
+ * @param inst    Pointer to dw1000_dev_instance_t.
+ * @return void
  */
 void
 dw1000_provision_start(dw1000_dev_instance_t * inst){
@@ -500,17 +442,11 @@ dw1000_provision_start(dw1000_dev_instance_t * inst){
     provision_timer_init(inst);
 }
 
-/*!
- * @fn dw1000_provision_stop(dw1000_dev_instance_t * inst)
+/**
+ * This function stops the provision process.
  *
- * @brief This function stops the provision process
- *
- * input parameters
- * @param inst - dw1000_dev_instance_t * inst
- *
- * output parameters
- *
- * returns none
+ * @param inst    Pointer to dw1000_dev_instance_t.
+ * @return void
  */
 void
 dw1000_provision_stop(dw1000_dev_instance_t * inst){
@@ -520,19 +456,13 @@ dw1000_provision_stop(dw1000_dev_instance_t * inst){
     os_callout_stop(&inst->provision->provision_callout_timer);
 }
 
-/*!
- * @fn provision_add_node(dw1000_dev_instance_t *inst, uint16_t addr)
+/**
+ * This function adds a new node to its database and stores it in provision's
+ * instance.
  *
- * @brief This function adds a new node to its database and stores it in provision's
- * instance
- *
- * input parameters
- * @param inst - dw1000_dev_instance_t * inst
- * @param addr - short address of the device to be added
- *
- * output parameters
- *
- * returns dw1000_provision_error_t
+ * @param inst   Pointer to dw1000_dev_instance_t.
+ * @param addr   Short address of the device to be added.
+ * @return dw1000_provision_error_t
  */
 dw1000_provision_error_t
 provision_add_node(dw1000_dev_instance_t *inst, uint16_t addr){
@@ -545,18 +475,12 @@ provision_add_node(dw1000_dev_instance_t *inst, uint16_t addr){
     return PROVISION_SUCCESS;
 }
 
-/*!
- * @fn provision_delete_node(dw1000_dev_instance_t *inst, uint16_t addr)
+/**
+ * This function deletes a node from its database.
  *
- * @brief This function deletes a node from its database
- *
- * input parameters
- * @param inst - dw1000_dev_instance_t * inst
- * @param addr - short address of the device to be removed
- *
- * output parameters
- *
- * returns dw1000_provision_error_t
+ * @param inst  Pointer to dw1000_dev_instance_t.
+ * @param addr  Short address of the device to be removed.
+ * return dw1000_provision_error_t
  */
 dw1000_provision_error_t
 provision_delete_node(dw1000_dev_instance_t *inst, uint16_t addr){
