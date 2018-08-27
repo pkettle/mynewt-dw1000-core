@@ -56,7 +56,7 @@ extern "C" {
 #include <dw1000/dw1000_ftypes.h>
 #include <dw1000/triad.h>
 
-//! Structure of delay parameters of range.
+//! Range configuration parameters.
 typedef struct _dw1000_rng_config_t{
    uint32_t rx_holdoff_delay;        //!< Delay between frames, in UWB usec.
    uint32_t tx_holdoff_delay;        //!< Delay between frames, in UWB usec.
@@ -64,12 +64,12 @@ typedef struct _dw1000_rng_config_t{
    uint16_t bias_correction:1;       //!< Enable range bias correction polynomial
 }dw1000_rng_config_t;
 
-//!< Structure of range control containing delay start.
+//!< Range control parameters.
 typedef struct _dw1000_rng_control_t{
     uint16_t delay_start_enabled:1;  //!< Set for enabling delayed start
 }dw1000_rng_control_t;
 
-//! Structure of modes of ranging. 
+//! Ranging modes. 
 typedef enum _dw1000_rng_modes_t{
     DWT_TWR_INVALID = 0,             //!< Invalid TWR
     DWT_SS_TWR,                      //!< Single sided TWR 
@@ -90,7 +90,7 @@ typedef enum _dw1000_rng_modes_t{
     DWT_PROVISION_RESP,              //!< End of provision
 }dw1000_rng_modes_t;
 
-//! Status of ranging
+//! Range status parameters
 typedef struct _dw1000_rng_status_t{
     uint16_t selfmalloc:1;           //!< Internal flag for memory garbage collection
     uint16_t initialized:1;          //!< Instance allocated
@@ -98,14 +98,14 @@ typedef struct _dw1000_rng_status_t{
     uint16_t invalid_code_error:1;   //!< Error due to invalid code
 }dw1000_rng_status_t;
 
-//! Structure of TWR final frame
+//!  TWR final frame format
 typedef struct _twr_frame_final_t{
         struct _ieee_rng_response_frame_t;
         uint32_t request_timestamp;     //!< Request transmission timestamp
         uint32_t response_timestamp;    //!< Response reception timestamp
 } __attribute__((__packed__, aligned(1))) twr_frame_final_t;
 
-//! Structure of TWR data
+//! TWR data format
 typedef struct _twr_data_t{
                 uint64_t utime;                     //!< CPU time to usecs
                 triad_t spherical;                  //!< Measurement triad spherical coordinates
@@ -114,7 +114,7 @@ typedef struct _twr_data_t{
           //      triad_t cartesian_variance;       //!< Position estimated variance triad 
 }twr_data_t;
 
-//! Structure of all the frames in ranging
+//! 
 typedef union {
 //! Structure of TWR frame
     struct _twr_frame_t{

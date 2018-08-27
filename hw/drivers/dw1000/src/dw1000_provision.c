@@ -56,6 +56,12 @@ static void provision_tx_error_cb(dw1000_dev_instance_t * inst);
 static void provision_tx_complete_cb(dw1000_dev_instance_t * inst);
 static void provision_postprocess(struct os_event * ev);
 
+/**
+ * API for provision timer event callback.
+ * 
+ * @param ev  pointer to os_events.
+ * @return void
+ */
 static void
 provision_timer_ev_cb(struct os_event *ev) {
     assert(ev != NULL);
@@ -68,6 +74,12 @@ provision_timer_ev_cb(struct os_event *ev) {
       os_callout_reset(&provision->provision_callout_timer, OS_TICKS_PER_SEC * (provision->config.period));
 }
 
+/**
+ * API for provision timer init.
+ *
+ * @param inst poinetr to dw1000_dev_instance_t.
+ * @return void
+ */
 static void
 provision_timer_init(dw1000_dev_instance_t * inst) {
     assert(inst != NULL);
@@ -78,7 +90,7 @@ provision_timer_init(dw1000_dev_instance_t * inst) {
 }
 
 /** 
- * Allocate resources on TAG & Anchor for provisioning
+ * API to allocate resources on TAG & Anchor for provisioning
  * can be freed on TAG & ANCHOR on once provision have been completed.
  *
  * @param inst    Pointer to dw1000_dev_instance_t.
@@ -120,7 +132,7 @@ dw1000_provision_init(dw1000_dev_instance_t * inst, dw1000_provision_config_t co
 }
 
 /**
- * Free resources and restore default behaviour. 
+ * API to free allocated provision resources.
  *
  * @param inst  Pointer to dw1000_dev_instance_t. 
  * @return void
@@ -141,7 +153,7 @@ dw1000_provision_free(dw1000_dev_instance_t * inst){
 }
 
 /** 
- * Sets the callbacks to be called for provision related rx_complete, rx_timeout, etc in a linked list.
+ * API to register the callbacks to be called for provision related rx_complete, rx_timeout, etc in a linked list.
  *
  * @param inst             Pointer to dw1000_dev_instance_t.
  * @param provision_cbs    Structure to dw1000_extension_callbacks_t.
@@ -155,7 +167,7 @@ dw1000_provision_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extensio
 
 
 /** 
- * Sets post_process in provision.Required on provision intiator.
+ * API to set post_process.
  *
  * @param inst                   Pointer to dw1000_dev_instance_t.
  * @param provision_postprocess  Pointer to os_event_fn.
@@ -171,7 +183,7 @@ dw1000_provision_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * pro
 }
 
 /** 
- * This is a template which should be replaced by the provision intiator by a event that can just pass the
+ * This is a template which should be replaced by the provision initiator by a event that can just pass the
  * information to some other layers like application to kick start some other event. Currently just prints out
  * the information about the provisioned devices.
  *
@@ -186,8 +198,8 @@ provision_postprocess(struct os_event * ev){
 }
 
 /** 
- * This is an internal static function that executes on both the provision intiator and the TAG/ANCHOR 
- * that replies to the beacon. On the provision intiator the postprecess function can send the database to the application
+ * API that executes on both the provision intiator and the TAG/ANCHOR 
+ * that replies to the beacon. On the provision initiator the post process function can send the database to the application
  * and kick start some other task like ranging or so. In responder there is no need of post process and should just go to
  * rx mode again. 
  *
@@ -289,7 +301,7 @@ provision_rx_complete_cb(dw1000_dev_instance_t* inst){
 }
 
 /** 
- * Handles the rx_timeout case for provisioning.
+ * API for rx_timeout callback.
  *
  * @param inst      pointer to dw1000_dev_instance_t.
  * @return void
@@ -322,7 +334,7 @@ provision_rx_timeout_cb(dw1000_dev_instance_t * inst){
 }
 
 /** 
- * Handles the rx_error case for provisioning.
+ * API for rx_error callback.
  *
  * @param inst    Pointer to dw1000_dev_instance_t.
  * @return void
@@ -350,7 +362,7 @@ provision_rx_error_cb(dw1000_dev_instance_t * inst){
 }
 
 /** 
- * Handles the tx_error case for provisioning.
+ * API for tx_error callback.
  *
  * @param inst   Pointer to dw1000_dev_instance_t.
  * @return void
@@ -368,7 +380,7 @@ provision_tx_error_cb(dw1000_dev_instance_t * inst){
 }
 
 /** 
- * Handles the tx_complete case.
+ * API for tx_complete callback.
  *
  * @param inst pointer to dw1000_dev_instance_t
  * @return void
@@ -386,11 +398,11 @@ provision_tx_complete_cb(dw1000_dev_instance_t * inst){
 }
 
 /** 
- * Provisioning is a phase where a Tag finds all the adjucent Nodes or Nodes find 
- * nodes adjacent to it. The outcome is a database of all the nearby nodes.
+ * API to send Provision request.It is a phase where a one device helps to finds all the accessible nodes in the range.
+ * The outcome is a database of all the nearby nodes.
  *
  * @param inst  Pointer to dw1000_dev_instance_t.
- * @param mode  dw1000_devmodes_t for DWT_BLOCKING, DWT_NONBLOCKING.
+ * @param mode  dw1000_dev_modes_t for DWT_BLOCKING, DWT_NONBLOCKING.
  * @return dw1000_provision_status_t 
  */
 dw1000_provision_status_t 
@@ -443,7 +455,7 @@ dw1000_provision_start(dw1000_dev_instance_t * inst){
 }
 
 /**
- * This function stops the provision process.
+ * API to stop the provision process.
  *
  * @param inst    Pointer to dw1000_dev_instance_t.
  * @return void
@@ -457,7 +469,7 @@ dw1000_provision_stop(dw1000_dev_instance_t * inst){
 }
 
 /**
- * This function adds a new node to its database and stores it in provision's
+ * API to add a new provision node to its database and stores it in provision's
  * instance.
  *
  * @param inst   Pointer to dw1000_dev_instance_t.
@@ -476,7 +488,7 @@ provision_add_node(dw1000_dev_instance_t *inst, uint16_t addr){
 }
 
 /**
- * This function deletes a node from its database.
+ * API to delete a node from its database.
  *
  * @param inst  Pointer to dw1000_dev_instance_t.
  * @param addr  Short address of the device to be removed.

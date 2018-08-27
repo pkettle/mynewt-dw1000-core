@@ -44,17 +44,17 @@ extern "C" {
 #include <dw1000/dw1000_dev.h>
 #include <dw1000/dw1000_ftypes.h>
 
-//!< State of provision
+//! Provision state
 typedef enum _dw1000_provision_state_t{
     PROVISION_INVALID,       //!< Invalid provision
     PROVISION_START,         //!< Start of provision
     PROVISION_DONE,          //!< Provision is complete
 }dw1000_provision_state_t;
 
-//! Error state of provision
+//! Status of provision API
 typedef enum _dw1000_provision_error_t{
     PROVISION_SUCCESS,       //!< Provision is success
-    PROVISION_ERROR,         //!< PRovision is failed
+    PROVISION_ERROR,         //!< Provision is failed
 }dw1000_provision_error_t;
 
 //! Provision status

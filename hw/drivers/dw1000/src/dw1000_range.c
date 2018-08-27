@@ -55,13 +55,12 @@ static struct os_callout range_callout_timer;
 static struct os_callout range_callout_postprocess;
 
 /**
- * This function starts ranging by sending the range request to the node_addr[] sequentially.
- * This function is called by the rnage_callout_timer callout from default queue.
+ * API to start ranging by sending the range request to the node_addr[] sequentially.
+ * This function is called by the range_callout_timer callout from default queue.
  *
  * @param ev   Pointer to os_events.
  * @return void
  */
-
 
 static void
 range_timer_ev_cb(struct os_event *ev) {
@@ -83,7 +82,7 @@ range_timer_ev_cb(struct os_event *ev) {
 }
 
 /**
- * Initializes the timer based callout(range_callout_timer) to periodically callback the range_timer_ev_cb.
+ * API to initialise the timer based callout(range_callout_timer) to periodically callback the range_timer_ev_cb.
  *        
  * @param inst   Pointer to dw1000_dev_instance_t. 
  * @return void
@@ -100,14 +99,13 @@ range_timer_init(dw1000_dev_instance_t *inst) {
 }
 
 /**
- * This function is called when the ranging is completed. It checks for the type of packet received.
+ * API to check for the type of packet received.
  * If the packet is of ranging type, then it calls range_postprocess by pushing into the event queue.
  * else the extension_cb->next function is called.
  *
  * @param inst   Pointer to dw1000_dev_instance_t. 
  * @return void
  */
-
 
 static void range_complete_cb(dw1000_dev_instance_t *inst){
     if(inst->fctrl != FCNTL_IEEE_RANGE_16){
@@ -140,8 +138,8 @@ static void range_complete_cb(dw1000_dev_instance_t *inst){
 }
 
 /**
- * This is a internal static function called when an error occured in the receiving the correct range packet.
- * If the error occured during the range process then , then range postprocess is pushed into the event queue 
+ * This is an internal static function called when an error occured in the receiving the correct range packet.
+ * If the error occured during the range process then, then range postprocess is pushed into the event queue 
  * else the extension_cb->next function is called.
  *
  * @param inst   Pointer to dw1000_dev_instance_t. 
@@ -182,7 +180,7 @@ static void range_error_cb(dw1000_dev_instance_t *inst){
 }
 
 /**
- * This is a internal static function called if any tx successful event occurs.
+ * API for range transmit complete callback.
  *
  * @param inst   Pointer to dw1000_dev_instance_t. 
  * @return void
@@ -200,7 +198,7 @@ range_tx_complete_cb(dw1000_dev_instance_t* inst){
 }
 
 /**
- * This function initiates the range_callout_postprocess(os callout) with rng_postprocess 
+ * API to initiate the range_callout_postprocess(os callout) with rng_postprocess 
  * and links to default queue.
  *
  * @param inst              Pointer to dw1000_dev_instance_t.
@@ -217,10 +215,9 @@ static void range_reg_postprocess(dw1000_dev_instance_t * inst, os_event_fn * rn
 }
 
 /**
- * This is the default postprocess called after ranging is completed or any error occured.
+ * API for postprocess.
  *
- * @param inst              Pointer to dw1000_dev_instance_t.
- * @param rng_postprocess   Pointer to the os_event_fn.
+ * @param ev   Pointer to the os_event.
  * @return void
  */
 
@@ -239,7 +236,7 @@ static void postprocess(struct os_event * ev){
 }
 
 /**
- * Initialises various parameters of range instance are status bits, semaphores,callbacks, ext_callbacks, postprocess. 
+ * API to initialise various parameters of range instance like status bits, semaphores,callbacks, ext_callbacks, postprocess. 
  *
  * @param inst       Pointer to dw1000_dev_instance_t. 
  * @param nnodes     Number of nodes to range with.
@@ -295,7 +292,7 @@ dw1000_range_init(dw1000_dev_instance_t * inst, uint16_t nnodes, uint16_t node_a
 }
 
 /**
- * Deallocates the memory allocated to the inst->range instance.
+ * API to free the acquired resources.
  *
  * @param inst  Pointer to dw1000_dev_instance_t.
  * @return void
@@ -313,7 +310,7 @@ dw1000_range_free(dw1000_dev_instance_t *inst){
 }
 
 /**
- * This function registers the extension call backs of ranging with the inst->extension_cb. 
+ * APi to register the extension call backs of ranging with the inst->extension_cb. 
  *
  * @param inst                          Pointer to dw1000_range_instance_t.
  * @dw1000_remove_extension_callbacks   Set of extension type call backs.
@@ -326,8 +323,7 @@ void dw1000_range_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extensi
 }
 
 /**
- * This API assigns the range_postprocess to the range->postprocess
- * The range_post_process is called once the range is completed or any error is occured.
+ * API to register range post process.
  *
  * @param inst                Pointer to dw1000_range_instance_t. 
  * @param range_postprocess   Pointer to the range post process.
@@ -340,7 +336,7 @@ dw1000_range_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * range_p
 }
 
 /**
- * This function starts the ranging by calling the range_timer_init().
+ * API to start the ranging by calling the range_timer_init().
  *
  * @param inst   Pointer to dw1000_range_instance_t. 
  * @param code   It corresponds to the mode of ranging
@@ -361,7 +357,7 @@ dw1000_range_start(dw1000_dev_instance_t * inst, dw1000_rng_modes_t code){
 }
 
 /**
- * Stops the ranging by stoping the range_callout_timer. 
+ * API to stop the ranging. 
  *
  * @param inst        Pointer to dw1000_range_instance_t.
  * @return void
@@ -375,7 +371,7 @@ dw1000_range_stop(dw1000_dev_instance_t * inst){
 }
 
 /**
- * Initialises the range->node_addr pointer with the array of node addresses.
+ * API to initialise the range->node_addr pointer with the array of node addresses.
  *
  * @param inst         Pointer to dw1000_range_instance_t.
  * @param node_add[]   Pointer to the array of node addresses.
@@ -392,7 +388,7 @@ dw1000_range_set_nodes(dw1000_dev_instance_t *inst, uint16_t node_addr[], uint16
 }
 
 /**
- * Re Allocates the memory for storing the node addresses based on the nnodes param.
+ * API to reallocate the memory for storing the node addresses based on the nnodes param.
  * Initialises the range structure with the default values.
  *
  * @param inst          Pointer to dw1000_range_instance_t.
@@ -425,7 +421,7 @@ dw1000_range_reset_nodes(dw1000_dev_instance_t * inst, uint16_t node_addr[], uin
 }
 
 /**
- * Reset the frames by rellocating the memory based on the number of frames parameter.
+ * API to reset the frames by rellocating the memory based on the number of frames parameter.
  * and initializes the frames with the default values.
  *
  * @param inst      Pointer to dw1000_range_instance_t.

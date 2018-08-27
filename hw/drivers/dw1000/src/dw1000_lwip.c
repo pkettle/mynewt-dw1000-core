@@ -66,7 +66,7 @@ static void rx_error_cb(dw1000_dev_instance_t * inst);
 dw1000_lwip_context_t cntxt; //!< lwip context based callback 
 
 /**
- * Function to assign the config parameters.
+ * API to assign the config parameters.
  *
  * @param inst     Pointer to dw1000_dev_instance_t.
  * @param config   Pointer to structure dw1000_lwip_config_t containing configuration values. 
@@ -83,7 +83,7 @@ dw1000_lwip_config(dw1000_dev_instance_t * inst, dw1000_lwip_config_t * config){
 }
 
 /**
- * Function to initialize the lwip service.
+ * API to initialize the lwip service.
  *
  * @param inst     Pointer to dw1000_dev_instance_t.
  * @param config   Pointer to the structure dw1000_lwip_config_t to configure the delay parameters.
@@ -127,7 +127,7 @@ dw1000_lwip_init(dw1000_dev_instance_t * inst, dw1000_lwip_config_t * config, ui
 }
 
 /**
- * Function to mark lwip serveice as free.
+ * API to mark lwip service as free.
  *
  * @param inst   Pointer to dw1000_lwip_instance_t.
  * @return void
@@ -143,7 +143,7 @@ dw1000_lwip_free(dw1000_lwip_instance_t * inst){
 }
 
 /**
- * This API sets the lwip callbacks based on corresponding event.
+ * API to register lwip callbacks based on corresponding event.
  *
  * @param inst                 Pointer to dw1000_dev_instance_t.
  * @param rng_tx_complete_cb   Pointer to the TX confirmation event callback function.
@@ -164,7 +164,7 @@ dw1000_lwip_set_callbacks( dw1000_dev_instance_t * inst, dw1000_dev_cb_t tx_comp
 }
 
 /**
- * Function to send lwIP buffer to radio.
+ * API to send lwIP buffer to radio.
  *
  * @param inst  Pointer to dw1000_dev_instance_t.
  * @param p     lwIP Buffer to be sent to radio.
@@ -194,7 +194,7 @@ dw1000_lwip_write(dw1000_dev_instance_t * inst, struct pbuf *p, dw1000_lwip_mode
 }
 
 /**
- * Function to put the radio in Receive mode.
+ * API to put DW1000 radio in Receive mode.
  *
  * @param inst     Pointer to dw1000_dev_instance_t.
  * @param timeout  Timeout value for radio in receive mode. 
@@ -211,7 +211,7 @@ dw1000_lwip_start_rx(dw1000_dev_instance_t * inst, uint16_t timeout){
 }
 
 /**
- * Function to confirm receive is complete. 
+ * API to confirm receive is complete. 
  * 
  * @param inst   Pointer to dw1000_dev_instance_t.
  * @retrun void 
@@ -231,7 +231,7 @@ rx_complete_cb(dw1000_dev_instance_t * inst){
 }
 
 /**
- * Function to confirm transmit is complete. 
+ * API to confirm transmit is complete. 
  *
  * @param inst    Pointer to dw1000_dev_instance_t.
  * @return void
@@ -244,7 +244,7 @@ tx_complete_cb(dw1000_dev_instance_t * inst){
 }
 
 /**
- * A timeout in receive callback.
+ * API for timeout in receive callback.
  *
  * @param inst   pointer to dw1000_dev_instance_t.
  * @param void
@@ -259,7 +259,7 @@ rx_timeout_cb(dw1000_dev_instance_t * inst){
 }
 
 /**
- * Error in receiving the data.
+ * API for error in receiving the data.
  *
  * @param inst   pointer to dw1000_dev_instance_t.
  * @return void
@@ -274,7 +274,7 @@ rx_error_cb(dw1000_dev_instance_t * inst){
 }
 
 /**
- * dw1000_low_level_init Radio Low level initialization function. 
+ * API to initialize radio. 
  *
  * @param inst         Pointer to dw1000_dev_instance_t.
  * @param txrf_config  Radio Tx and Rx configuration structure.
@@ -291,7 +291,7 @@ dw1000_low_level_init( dw1000_dev_instance_t * inst,
 }
 
 /**
- * dw1000_netif_config lwIP network interface configuration function.
+ * API to configure lwIP network interface.
  *
  * @param inst         Pointer to dw1000_dev_instance_t.
  * @param dw1000_netif Network interface structure to be configured.
@@ -321,7 +321,7 @@ dw1000_netif_config(dw1000_dev_instance_t *inst, struct netif *dw1000_netif, ip_
 }
 
 /**
- * dw1000_netif_init Network interface initialization function. 
+ * API to initialise dw1000_netif_init Network interface. 
  *
  * @param dw1000_netif  Network interface structure to be initialized. 
  * @return Error status : Default ERR_OK 
@@ -342,7 +342,7 @@ dw1000_netif_init(struct netif *dw1000_netif){
 }
 
 /**
- * dw1000_ll_output Low Level output function, acts as a brigde between 6lowPAN and radio.
+ * Low level output API to bridge 6lowpan and radio
  *
  * @param dw1000_netif  Network interface.
  * @param p             Buffer to be sent to the radio. 
@@ -366,7 +366,7 @@ dw1000_ll_output(struct netif *dw1000_netif, struct pbuf *p){
 }
 
 /**
- * dw1000_ll_input Low level input function, acts as a bridge between radio input and 6lowPAN.
+ * Low level input API to bridge 6lowpan and radio.
  *
  * @param pt            Pointer to received buffer from radio.
  * @param dw1000_netif  Network interface. 
@@ -384,7 +384,7 @@ dw1000_ll_input(struct pbuf *pt, struct netif *dw1000_netif){
 }
 
 /**
- * print_error Function to print error status and type.
+ * API to print error status and type.
  *
  * @param error  Error Type. 
  * @return void

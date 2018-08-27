@@ -45,7 +45,7 @@ static int dw1000_find_extension_callbacks_position(dw1000_dev_instance_t *inst,
 static dw1000_extension_callbacks_t* dw1000_new_extension_callbacks(dw1000_dev_instance_t* inst);
 
 /**
- * Performs dw1000_read from given address.
+ * API to perform dw1000_read from given address.
  *
  * @param inst          Pointer to dw1000_dev_instance_t. 
  * @param reg           Member of dw1000_cmd_t structure. 
@@ -81,7 +81,7 @@ dw1000_read(dw1000_dev_instance_t * inst, uint16_t reg, uint16_t subaddress, uin
 }
 
 /**
- * Performs dw1000_write into given address.
+ * API to performs dw1000_write into given address.
  *
  * @param inst          Pointer to dw1000_dev_instance_t. 
  * @param reg           Member of dw1000_cmd_t structure. 
@@ -118,7 +118,7 @@ dw1000_write(dw1000_dev_instance_t * inst, uint16_t reg, uint16_t subaddress, ui
 }
 
 /**
- * Reads data from dw1000 register based on given parameters.
+ * API to read data from dw1000 register based on given parameters.
  *
  * @param inst          Pointer to dw1000_dev_instance_t. 
  * @param reg           Register from where data is read. 
@@ -142,7 +142,7 @@ dw1000_read_reg(dw1000_dev_instance_t * inst, uint16_t reg, uint16_t subaddress,
 } 
 
 /**
- * Writes data into dw1000 register based on given parameters.
+ * API to write data into dw1000 register based on given parameters.
  *
  * @param inst          Pointer to dw1000_dev_instance_t.
  * @param reg           Register from where data is written into.
@@ -165,7 +165,7 @@ dw1000_write_reg(dw1000_dev_instance_t * inst, uint16_t reg, uint16_t subaddress
 } 
 
 /**
- * This call does softreset on dw1000 by writing data into PMSC_CTRL0_SOFTRESET_OFFSET.
+ * API to do softreset on dw1000 by writing data into PMSC_CTRL0_SOFTRESET_OFFSET.
  *
  * @param inst  Pointer to dw1000_dev_instance_t. 
  * @return void
@@ -270,7 +270,7 @@ retry:
 }
 
 /**
- * To free the acquired resources.
+ * API to free the acquired resources.
  *
  * @param inst  Pointer to dw1000_dev_instance_t.
  * @return void
@@ -288,7 +288,7 @@ dw1000_dev_free(dw1000_dev_instance_t * inst){
 
 
 /**
- *  Configures the device for both DEEP_SLEEP and SLEEP modes, and on-wake mode
+ *  API to configure the device for both DEEP_SLEEP and SLEEP modes, and on-wake mode
  *  i.e., before entering the sleep, the device should be programmed for TX or RX, then upon "waking up" the TX/RX settings
  *  will be preserved and the device can immediately perform the desired action TX/RX.
  *
@@ -326,7 +326,7 @@ dw1000_dev_configure_sleep(dw1000_dev_instance_t * inst, uint16_t mode, uint8_t 
 }
 
 /**
- * Device enters into sleep mode.
+ * API to enter device into sleep mode.
  *
  * @param inst   Pointer to dw1000_dev_instance_t. 
  * @return dw1000_dev_status_t
@@ -350,7 +350,7 @@ dw1000_dev_enter_sleep(dw1000_dev_instance_t * inst)
 }
 
 /**
- * Device wakeup from sleep to init.
+ * API to wakeup device from sleep to init.
  *
  * @param inst  Pointer to dw1000_dev_instance_t.
  * @return dw1000_dev_status_t 
@@ -388,7 +388,7 @@ dw1000_dev_wakeup(dw1000_dev_instance_t * inst)
 
 
 /** 
- * Sets the auto TX to sleep bit. This means that after a frame
+ * API to set the auto TX to sleep bit. This means that after a frame
  * transmission the device will enter deep sleep mode. The dwt_setdeepsleep() function
  * needs to be called before this to configure the on-wake settings.
  *
@@ -415,10 +415,10 @@ dw1000_dev_enter_sleep_after_tx(dw1000_dev_instance_t * inst, int enable)
 }
 
 /**
- * Assigns callbacks for different services into a linked list.
+ * API to register extension  callbacks for different services.
  *
  * @param inst       Pointer to dw1000_dev_instance_t.
- * @param callbacks  Structure that holds callbacks.
+ * @param callbacks  callback instance.
  * @return void
  */
 void
@@ -444,7 +444,7 @@ dw1000_add_extension_callbacks(dw1000_dev_instance_t* inst, dw1000_extension_cal
 }
 
 /**
- * Assigns memory for new callbacks.
+ * API to assign memory for new callbacks.
  *
  * @param inst  Pointer to dw1000_dev_instance_t.
  * @return new callbacks
@@ -458,10 +458,10 @@ dw1000_new_extension_callbacks(dw1000_dev_instance_t* inst){
 }
 
 /**
- * Specified callbacks are removed which are controlled by id of services.
+ * API to remove specified callbacks.
  *
  * @param inst  Pointer to dw1000_dev_instance_t.
- * @param id    ID of the callback.
+ * @param id    ID of the service.
  * @return void
  */
 void
@@ -488,7 +488,7 @@ dw1000_remove_extension_callbacks(dw1000_dev_instance_t* inst, dw1000_extension_
 }
 
 /**
- * Find callbacks based on id.
+ * API to find callbacks.
  *
  * @param inst   Pointer to dw1000_dev_instance_t.
  * @param id     ID of the callback.

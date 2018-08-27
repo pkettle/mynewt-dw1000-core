@@ -50,7 +50,25 @@ typedef enum _dw1000_led_modes_t{
 }dw1000_led_modes_t;
 
 void dw1000_gpio_config_leds(struct _dw1000_dev_instance_t * inst, dw1000_led_modes_t mode);
+/**
+ * This is used to set GPIO value as (1) or (0) only applies if the GPIO is configured as output.
+ *
+ * @param gpioNum    This is the GPIO to configure - see GxM0... GxM8 in the deca_regs.h file.
+ * @param value      This sets the GPIO value - see GDP0... GDP8 in the deca_regs.h file.
+ *
+ * @return void
+ */
+
 void dw1000_gpio_set_value(struct _dw1000_dev_instance_t * inst, uint32_t gpioNum, uint32_t value);
+/**
+ * This is used to set GPIO direction as an input (1) or output (0).
+ *
+ * @param gpioNum       This is the GPIO to configure - see GxM0... GxM8 in the deca_regs.h file.
+ * @param direction     This sets the GPIO direction - see GxP0... GxP8 in the deca_regs.h file.
+ *
+ * @return void
+ */
+
 void dw1000_gpio_set_direction(struct _dw1000_dev_instance_t * inst, uint32_t gpioNum, uint32_t direction);
 
 #ifdef __cplusplus

@@ -44,13 +44,13 @@ extern "C" {
 #include <dw1000/dw1000_ftypes.h>
 #include <dw1000/dw1000_rng.h>
 
-//! Structure of range configuration parameters
+//! Range configuration parameters
 typedef struct _dw1000_range_config_t{
     uint16_t postprocess:1;              //!< Sets postprocess
     dw1000_rng_modes_t code:8;           //!< Response code for the request 
 }dw1000_range_config_t;
 
-//! Structure of range status parameters
+//! Range status parameters
 typedef struct _dw1000_range_status_t{ 
     uint16_t selfmalloc:1;                //!< Internal flag for memory garbage collection
     uint16_t initialized:1;               //!< Instance allocated

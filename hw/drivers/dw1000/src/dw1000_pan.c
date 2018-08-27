@@ -67,7 +67,7 @@ static dw1000_pan_status_t dw1000_pan_blink(dw1000_dev_instance_t * inst, dw1000
 static void pan_postprocess(struct os_event * ev);
 
 /**
- * This API periodically send pan blink request.
+ * API periodically sends pan blink request.
  *
  * @param ev  Pointer to os_events.
  * @return void
@@ -85,7 +85,7 @@ pan_timer_ev_cb(struct os_event *ev) {
 }
 
 /**
- * This initiaises the timer based callout (pan_callout_timer).
+ * API to initiaise the timer based callout (pan_callout_timer).
  *
  * @param inst  Pointer to dw1000_dev_instance_t.
  * @return void
@@ -100,8 +100,7 @@ pan_timer_init(dw1000_dev_instance_t * inst) {
 }
 
 /** 
- * Allocate resources on pan_master and TAG/ANCHOR for pan discovery behaviour. TAG/ANCHOR and anchor size resources
- * can be freed on TAG/ANCHOR on once assigment have are valid.
+ * API to initialise pan parameters.
  *
  * @param inst     Pointer to dw1000_dev_instance_t.
  * @param config   Pointer to dw1000_pan_config_t. 
@@ -153,7 +152,7 @@ dw1000_pan_init(dw1000_dev_instance_t * inst,  dw1000_pan_config_t * config){
 }
 
 /** 
- * Free resources and restore default behaviour. 
+ * API to free pan resources. 
  *
  * @param inst  Pointer to dw1000_dev_instance_t .
  * @return void
@@ -170,7 +169,7 @@ dw1000_pan_free(dw1000_dev_instance_t * inst){
 
 
 /** 
- * This calls for pan extension callbacks .
+ * API to set pan extension callbacks .
  *
  * @param inst   Pointer to dw1000_dev_instance_t.
  * @param inst   dw1000_dev_cb_t for pan_rx_complete_cb or pan_tx_complete_cb
@@ -182,7 +181,7 @@ void dw1000_pan_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension
 }
 
 /** 
- * Replace default behaviour.Required on pan_master.
+ * API to set pan_postprocess.
  *
  * @param inst              Pointer to dw1000_dev_instance_t.
  * @param pan_postprocess   Pointer to os_event_fn.
@@ -197,8 +196,7 @@ dw1000_pan_set_postprocess(dw1000_dev_instance_t * inst, os_event_fn * pan_postp
 
 /** 
  * This a template which should be replaced by the pan_master by a event that tracks UUIDs 
- * and allocated PANIDs and SLOTIDs. See dw1000_pan_set_postprocess to replace current behavor. On the TAG/ANCHOR size this 
- * template generate a json log of the event.
+ * and allocated PANIDs and SLOTIDs. See dw1000_pan_set_postprocess to replace current behaviour. 
  *
  * @param ev  Pointer to os_events.
  * @return void
@@ -295,7 +293,7 @@ pan_rx_complete_cb(dw1000_dev_instance_t * inst){
 }
 
 /** 
- * This is an internal static function that executes on the TAG/ANCHOR.
+ * API for transmit complete callback.
  *
  * @param inst  Pointer to dw1000_dev_instance_t.
  * @return void
@@ -319,7 +317,7 @@ pan_tx_complete_cb(dw1000_dev_instance_t * inst){
 }
 
 /**
- * This is an internal static function that executes on the TAG/ANCHOR.
+ * API for receive complete callback.
  *
  * @param inst   Pointer to dw1000_dev_instance_t.
  * @return void
@@ -339,7 +337,7 @@ pan_rx_error_cb(dw1000_dev_instance_t * inst){
 }
 
 /**
- * This is an internal static function that executes on the TAG/ANCHOR.
+ * API for transmit error callback.
  *
  * @param inst   Pointer to dw1000_dev_instance_t. 
  * @return void
@@ -358,7 +356,7 @@ pan_tx_error_cb(dw1000_dev_instance_t * inst){
     }
 }
 /** 
- * This is an internal static function that executes on the TAG/ANCHOR.
+ * API for receive timeout callback.
  *
  * @param inst    Pointer to dw1000_dev_instance_t .
  * @return void
@@ -463,7 +461,7 @@ dw1000_pan_start(dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode){
 }
 
 /** 
- * Called once the discovery processs is complete see pan_rx_complete_cb or to abort the discovery event.   
+ * API to halt pan service.   
  *
  * @param inst    Pointer to dw1000_dev_instance_t. 
  * @return void

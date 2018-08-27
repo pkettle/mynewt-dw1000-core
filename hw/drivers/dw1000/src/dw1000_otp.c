@@ -43,7 +43,7 @@
 #include <dw1000/dw1000_otp.h>
 
 /**
- * This API takes the given address and enables otp_read from the succeeding address.
+ * API takes the given address and enables otp_read from the succeeding address.
  *
  * @param inst     Pointer to dw1000_dev_instance_t.
  * @param address  From where it starts reading.
@@ -63,7 +63,7 @@ void dw1000_phy_otp_read(struct _dw1000_dev_instance_t * inst, uint32_t address,
 }
 
 /**
- * This performs a read operation from the address specified.
+ * API to perform  read operation from the address specified.
  *   
  * @param inst     Pointer to dw1000_dev_instance_t.
  * @param address  From where it starts reading 

@@ -38,7 +38,7 @@
 
 
 /**
- * This is used to set up Tx/Rx GPIOs which could be used to control LEDs.
+ * API to set up Tx/Rx GPIOs which could be used to control LEDs.
  * Note: not completely IC dependent, also needs board with LEDS fitted on right I/O lines
  *       this function enables GPIOs 2 and 3 which are connected to LED3 and LED4 on EVB1000.
  *
@@ -86,7 +86,7 @@ void dw1000_gpio_config_leds(struct _dw1000_dev_instance_t * inst, dw1000_led_mo
 }
 
 /**
- * This is used to set GPIO direction as an input (1) or output (0).
+ * API to set GPIO direction as an input (1) or output (0).
  *
  * @param gpioNum       This is the GPIO to configure - see GxM0... GxM8 in the deca_regs.h file.
  * @param direction     This sets the GPIO direction - see GxP0... GxP8 in the deca_regs.h file.
@@ -106,7 +106,7 @@ void dw1000_gpio_direction(struct _dw1000_dev_instance_t * inst, uint32_t gpioNu
 }
 
 /**
- * This is used to set GPIO value as (1) or (0) only applies if the GPIO is configured as output.
+ * API to set GPIO value as (1) or (0) only applies if the GPIO is configured as output.
  *
  * @param gpioNum    This is the GPIO to configure - see GxM0... GxM8 in the deca_regs.h file.
  * @param value      This sets the GPIO value - see GDP0... GDP8 in the deca_regs.h file.

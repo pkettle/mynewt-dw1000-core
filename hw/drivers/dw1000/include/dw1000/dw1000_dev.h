@@ -55,7 +55,7 @@ extern "C" {
 
 #define BROADCAST_ADDRESS          0xffff  //!< Broad cast addresss
 
-//! Defined constants for setting the task into blocking/non-blocking mode .
+//! IDs for blocking/non-blocking mode .
 typedef enum _dw1000_dev_modes_t{
     DWT_BLOCKING,                    //!< Blocking mode of DW1000
     DWT_NONBLOCKING                  //!< Non-blocking mode of DW1000
@@ -68,7 +68,7 @@ typedef enum _dw1000_dev_role_t{
     TAG                             //!< Device type of tag
 }dw1000_dev_role_t;
 
-//! Constants defined as Extension id for particular moudule.
+//!  Extension ids for services.
 typedef enum _dw1000_extension_id_t{
     DW1000_CCP,                       //!< Clock calibration packet 
     DW1000_PAN,                       //!< Personal area network
@@ -179,7 +179,7 @@ typedef struct _dw1000_dev_rxdiag_t{
 
 struct _dw1000_dev_instance_t;
 
-//! DW1000 extension callbacks
+//! DW1000 generic  extension callback structure
 typedef struct _dw1000_extension_callback_t dw1000_extension_callbacks_t;
 
 //! Structure of extension call backs structure common for all the modules of linked list type.
@@ -194,7 +194,7 @@ typedef struct _dw1000_extension_callback_t{
     dw1000_extension_callbacks_t * previous;                      //!< Previous node in the list 
 }dw1000_extension_callbacks_t;
 
-//! Device instance hold all the data common across all the modules.
+//! Device instance parameters.
 typedef struct _dw1000_dev_instance_t{
     struct os_dev uwb_dev;                     //!< Has to be here for cast in create_dev to work 
     struct os_mutex *spi_mutex;                //!< Pointer to global spi mutex if available  
@@ -283,7 +283,7 @@ typedef struct _dw1000_dev_instance_t{
     dw1000_dev_role_t dev_type;                    //!< Type of the device (tag/node)
 }dw1000_dev_instance_t;
 
-//! Used to pass data to init function from bsp_hal
+//! SPI parameters
 struct dw1000_dev_cfg {
     struct os_mutex *spi_mutex;                    //!< Pointer to os_mutex structure  
     int spi_num;                                   //!< SPI number

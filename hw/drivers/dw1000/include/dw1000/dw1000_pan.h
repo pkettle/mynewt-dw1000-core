@@ -45,9 +45,9 @@ extern "C" {
 #include <dw1000/dw1000_rng.h>
 #include <dw1000/dw1000_ftypes.h>
 
-//! Union of response frame and frame parameters
+//! Union of response frame format
 typedef union{
-//! Structure containing pan response frame
+//! Structure containing pan response frame format
     struct _pan_frame_resp_t{
 //! Structure of IEEE blink frame
         struct _ieee_blink_frame_t;
@@ -58,9 +58,9 @@ typedef union{
     uint8_t array[sizeof(struct _pan_frame_resp_t)];
 }pan_frame_resp_t;
 
-//! Union of pan frame and response frame
+//! Union of pan frame format
 typedef union {
-//! Structure of pan frame
+//! Structure of pan frame format
     struct _pan_frame_t{
         struct _pan_frame_resp_t;
         uint64_t transmission_timestamp;    //!< Transmission timestamp
@@ -70,7 +70,7 @@ typedef union {
     uint8_t array[sizeof(struct _pan_frame_t)];
 }pan_frame_t;
 
-//! Status of pan
+//! Pan status parameters
 typedef struct _dw1000_pan_status_t{
     uint16_t selfmalloc:1;                 //!< Internal flag for memory garbage collection
     uint16_t initialized:1;                //!< Instance allocated
@@ -79,19 +79,19 @@ typedef struct _dw1000_pan_status_t{
     uint16_t timer_enabled:1;              //!< Indicates timer is enabled
 }dw1000_pan_status_t;
 
-//! Structure containing pan configurations
+//! Pan configure parameters
 typedef struct _dw1000_pan_config_t{
     uint32_t rx_holdoff_delay;        //!< Delay between frames, in UWB usec.
     uint16_t rx_timeout_period;       //!< Receive response timeout, in UWB usec.
     uint32_t tx_holdoff_delay;        //!< Delay between frames, in UWB usec.
 }dw1000_pan_config_t;
 
-//! ccp config structure of postprocess 
+//! Pan control parameters 
 typedef struct _dw1000_pan_control_t{
     uint16_t postprocess:1;           //!< Pan postprocess
 }dw1000_pan_control_t;
 
-//! Structure containing DW1000 pan instance parameters
+//! Pan instance parameters
 typedef struct _dw1000_pan_instance_t{
     struct _dw1000_dev_instance_t * parent;      //!< pointer to _dw1000_dev_instance_t
     struct os_sem sem;                           //!< Structure containing os semaphores

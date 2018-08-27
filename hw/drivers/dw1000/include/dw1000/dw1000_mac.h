@@ -44,26 +44,18 @@ extern "C" {
 
 #define DWT_DEVICE_ID   (0xDECA0130)        //!< DW1000 MP device ID
 
-//! Constants for selecting the bit rate for data TX (and RX)
-//! These are defined for write (with just a shift) the TX_FCTRL register
 #define DWT_BR_110K     0   //!< UWB bit rate 110 kbits/s
 #define DWT_BR_850K     1   //!< UWB bit rate 850 kbits/s
 #define DWT_BR_6M8      2   //!< UWB bit rate 6.8 Mbits/s
 
-//! Constants for specifying the (Nominal) mean Pulse Repetition Frequency
-//! These are defined for direct write (with a shift if necessary) to CHAN_CTRL and TX_FCTRL regs
 #define DWT_PRF_16M     1   //!< UWB PRF 16 MHz
 #define DWT_PRF_64M     2   //!< UWB PRF 64 MHz
 
-//! Constants for specifying Preamble Acquisition Chunk (PAC) Size in symbols
 #define DWT_PAC8        0   //!< PAC  8 (recommended for RX of preamble length  128 and below
 #define DWT_PAC16       1   //!< PAC 16 (recommended for RX of preamble length  256
 #define DWT_PAC32       2   //!< PAC 32 (recommended for RX of preamble length  512
 #define DWT_PAC64       3   //!< PAC 64 (recommended for RX of preamble length 1024 and up
 
-//! Constants for specifying TX Preamble length in symbols.
-//! These are defined to allow them be directly written into byte 2 of the TX_FCTRL register.
-//! (i.e. a four bit value destined for bits 20..18 but shifted left by 2 for byte alignment).
 #define DWT_PLEN_4096   0x0C    //!< Standard preamble length 4096 symbols
 #define DWT_PLEN_2048   0x28    //!< Non-standard preamble length 2048 symbols
 #define DWT_PLEN_1536   0x18    //!< Non-standard preamble length 1536 symbols
@@ -77,14 +69,14 @@ extern "C" {
 #define DWT_PHRMODE_STD             0x0     //!< standard PHR mode
 #define DWT_PHRMODE_EXT             0x3     //!< DW proprietary extended frames PHR mode
 
-//! Defined constants for "mode" bitmask parameter passed into dw1000_start_tx() function.
+//! Start transmit mode parameters
 typedef enum _dw1000_start_tx_modes_t {
     DWT_START_TX_IMMEDIATE = 1 << 0,     //!< Set up immediate tx to transmit immediately
     DWT_START_TX_DELAYED = 1 << 1,       //!< Set up delayed TX, if "late" error triggers, then the TX will be enabled immediately
     DWT_RESPONSE_EXPECTED = 1 << 2       //!< Set up if any response is expected for the transmission sent
 }dw1000_start_tx_modes_t;
 
-//! Defined constants for "mode" bitmask parameter passed into dw1000_start_rx() function.
+//! Start receive mode parameters
 typedef enum _dw1000_start_rx_modes_t {
     DWT_START_RX_IMMEDIATE = 1 << 0, //!< Set up immediate RX, to start receiving immediatley 
     DWT_START_RX_DELAYED = 1 << 1,  //!< Set up delayed RX, if "late" error triggers, then the RX will be enabled immediately.
@@ -96,7 +88,6 @@ typedef enum _dw1000_start_rx_modes_t {
 }dw1000_start_rx_modes_t;
 
 
-//! Frame filtering configuration options
 #define DWT_FF_NOTYPE_EN            0x000           //!< No frame types allowed (FF disabled)
 #define DWT_FF_COORD_EN             0x002           //!< Behave as coordinator (can receive frames with no dest address (PAN ID has to match))
 #define DWT_FF_BEACON_EN            0x004           //!< Beacon frames allowed
@@ -106,7 +97,6 @@ typedef enum _dw1000_start_rx_modes_t {
 #define DWT_FF_RSVD_EN              0x040           //!< Reserved frame types allowed
 
 
-//! DW1000 SLEEP and WAKEUP configuration parameters
 #define DWT_LOADLDO      0x1000                      //!< Load LDO tune value from OTP
 #define DWT_LOADUCODE    0x0800                      //!< Load microcode from OTP
 #define DWT_PRESRV_SLEEP 0x0100                      //!< PRES_SLEEP - on wakeup preserve sleep bit
@@ -122,12 +112,10 @@ typedef enum _dw1000_start_rx_modes_t {
 #define DWT_WAKE_WK      0x2                        //!< Wake up on WAKEUP PIN
 #define DWT_SLP_EN       0x1                        //!< Enable sleep/deep sleep functionality
 
-//! OTP operating parameter set selection
 #define DWT_OPSET_64LEN   0x0          //!< DW1000 OTP operating parameter set selection
 #define DWT_OPSET_TIGHT   0x1          //!< DW1000 OTP operating parameter set selection 
 #define DWT_OPSET_DEFLT   0x2          //!< DW1000 OTP operating parameter set selection
 
-//! IEEE 802.15.4-2011 MAC Frame format
 #define MAC_FFORMAT_FCTRL 0x0         //!<  MAC frame format - Control parameter selection
 #define MAC_FFORMAT_FCTRL_LEN 0x2     //!<  MAC frame format - Length parameter selection
 #define MAC_FFORMAT_FTYPE 0           //!<  MAC frame format - Frame type parameter selection
@@ -137,7 +125,7 @@ typedef enum _dw1000_start_rx_modes_t {
 #define MAC_FTYPE_COMMAND 0x3         //!<  MAC frame format - COMMAND parameter selection
 
 
-//! TX/RX callback data
+//! Callback data of mac.
 typedef struct _dw1000_mac_cb_data_t {
     uint32_t status;      //!< Initial value of register as ISR is entered
     uint16_t datalength;  //!< Length of frame
@@ -148,7 +136,7 @@ typedef struct _dw1000_mac_cb_data_t {
 //! Callback type for all events
 typedef void (*dw1000_mac_cb_t)(struct _dw1000_dev_instance_t * inst, const dw1000_mac_cb_data_t *);
 
-//! All of the below are mapped to a 12-bit register in DW1000
+//! Mac device parameters
 typedef struct _dw1000_mac_deviceentcnts_t{
     uint16_t PHE ;                    //!< Number of received header errors
     uint16_t RSL ;                    //!< Number of received frame sync loss events
@@ -164,7 +152,7 @@ typedef struct _dw1000_mac_deviceentcnts_t{
     uint16_t TXW ;                    //!< Power up warn
 } dw1000_mac_deviceentcnts_t ;
 
-//! Mac callbacks
+//! Mac layer callbacks
 typedef struct _dw1000_mac_callbacks_t{
     void (* tx_complete_cb) (struct _dw1000_dev_instance_t *);  //!< Transmit complete callback
     void (* rx_complete_cb) (struct _dw1000_dev_instance_t *);  //!< Receive complete callback

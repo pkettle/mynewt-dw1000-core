@@ -51,7 +51,7 @@ extern "C" {
 #include <dsp/polyval.h>
 #endif
 
-//! Timestamps and blink frame of ccp frame
+//! Timestamps and blink frame format  of ccp frame
 typedef union {
 //! Frame format of ccp
     struct _ccp_frame_t{
@@ -64,7 +64,7 @@ typedef union {
     uint8_t array[sizeof(struct _ieee_blink_frame_t)];
 }ccp_frame_t;
 
-//! Status of ccp
+//! Status parameters of ccp
 typedef struct _dw1000_ccp_status_t{
     uint16_t selfmalloc:1;            //!< Internal flag for memory garbage collection 
     uint16_t initialized:1;           //!< Instance allocated 
@@ -73,13 +73,13 @@ typedef struct _dw1000_ccp_status_t{
     uint16_t timer_enabled:1;         //!< Indicates timer is enabled 
 }dw1000_ccp_status_t;
 
-//! ccp config structure of postprocess 
+//! ccp config parameters  
 typedef struct _dw1000_ccp_config_t{
     uint16_t postprocess:1;           //!< CCP postprocess
     uint16_t fs_xtalt_autotune:1;     //!< Autotune XTALT to Clock Master
 }dw1000_ccp_config_t;
 
-//! Structure of ccp instance
+//! ccp instance parameters
 typedef struct _dw1000_ccp_instance_t{
     struct _dw1000_dev_instance_t * parent;     //!< Pointer to _dw1000_dev_instance_t
 #if MYNEWT_VAL(CLOCK_CALIBRATION_ENABLED)

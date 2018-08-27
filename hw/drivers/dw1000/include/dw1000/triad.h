@@ -38,7 +38,7 @@ extern "C" {
 #endif
 
 /**
- * @brief tryad definition
+ * @brief triad definition
  */
 
 #ifdef TRIAD_INT16

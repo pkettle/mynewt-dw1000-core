@@ -40,7 +40,7 @@
 static inline void _dw1000_phy_load_microcode(struct _dw1000_dev_instance_t * inst);
 
 /**
- * Force system clock to be the 19.2 MHz XTI clock.
+ * API that force system clock to be the 19.2 MHz XTI clock.
  * 
  * @param inst  Pointer to dw1000_dev_instance_t. 
  * @return void
@@ -53,7 +53,7 @@ inline void dw1000_phy_sysclk_XTAL(struct _dw1000_dev_instance_t * inst){
 }
 
 /**
- * Force system clock to be the 125 MHz PLL clock. 
+ * API that force system clock to be the 125 MHz PLL clock. 
  *
  * @param inst  Pointer to dw1000_dev_instance_t. 
  * @return void
@@ -66,7 +66,7 @@ inline void dw1000_phy_sysclk_PLL(struct _dw1000_dev_instance_t * inst){
 }
 
 /**
- * This call enables the running of the LDE algorithm.
+ * API to enable running of the LDE algorithm.
  *
  * @param inst  Pointer to dw1000_dev_instance_t. 
  * @return void
@@ -77,7 +77,7 @@ void dw1000_phy_sysclk_LDE(struct _dw1000_dev_instance_t * inst){
 }
 
 /**
- * This call enables PLL2 on/off sequencing by SNIFF mode
+ * API to enable PLL2 on/off sequencing by SNIFF mode.
  *
  * @param inst  Pointer to dw1000_dev_instance_t. 
  * @return void
@@ -89,10 +89,10 @@ inline void dw1000_phy_sysclk_SEQ(struct _dw1000_dev_instance_t * inst){
 }
 
 /**
- * This enables PLL2 on/off sequencing by SNIFF mode through masking of pmsc_ctrl_lo and pmsc_ctrl_hi.
+ * API to enable PLL2 on/off sequencing by SNIFF mode through masking of pmsc_ctrl_lo and pmsc_ctrl_hi.
  *
  * @param inst   Pointer to dw1000_dev_instance_t.
- * @param mode   Switches to the case specified. 
+ * @param mode   Switch to the case specified. 
  * @return void
  */
 inline void dw1000_phy_sysclk_ACC(struct _dw1000_dev_instance_t * inst, uint8_t mode){
@@ -116,7 +116,7 @@ inline void dw1000_phy_sysclk_ACC(struct _dw1000_dev_instance_t * inst, uint8_t 
 
 
 /**
- * This call disables PMSC control of analog RF subsystems.
+ * API to disable PMSC control of analog RF subsystems.
  *
  * @param inst  Pointer to dw1000_dev_instance_t. 
  * @return void
@@ -127,10 +127,10 @@ void dw1000_phy_disable_sequencing(struct _dw1000_dev_instance_t * inst){
 }
 
 /**
- * This call initializes the phy layer.
+ * API to initialise the phy layer.
  *
  * @param inst         Pointer to dw1000_dev_instance_t.
- * @param txrf_config  Pointer to the txrf configuration structure, which contains the txrf config data. 
+ * @param txrf_config  Pointer to dw1000_dev_txrf_config_t.
  * @return dw1000_dev_status_t
  */
 dw1000_dev_status_t dw1000_phy_init(struct _dw1000_dev_instance_t * inst, dw1000_dev_txrf_config_t * txrf_config){
@@ -198,9 +198,9 @@ dw1000_dev_status_t dw1000_phy_init(struct _dw1000_dev_instance_t * inst, dw1000
 }
 
 /**
- * Loads LDE microcode.  
+ * API to load LDE microcode.  
  *
- * @param inst   Pointer to _dw1000_dev_instance_t
+ * @param inst   Pointer to _dw1000_dev_instance_t.
  * @return void
  */
 void _dw1000_phy_load_microcode(struct _dw1000_dev_instance_t * inst)
@@ -215,7 +215,7 @@ void _dw1000_phy_load_microcode(struct _dw1000_dev_instance_t * inst)
 }
 
 /**
- * Configure LDE algorithm parameters.
+ * API to Configure LDE algorithm parameters.
  * 
  * @param inst  Pointer to dw1000_dev_instance_t.
  * @param prf   This is the PRF index (0 or 1) 0 corresponds to 16 and 1 to 64 PRF.
@@ -233,12 +233,12 @@ void dw1000_phy_config_lde(struct _dw1000_dev_instance_t * inst, int prfIndex)
 
 
 /**
- * This function provides the API for the configuration of the TX spectrum
+ * API for the configuration of the TX spectrum
  * including the power and pulse generator delay. The input is a pointer to the data structure
  * of type dwt_txconfig_t that holds all the configurable items.
  *
  * @param inst      Pointer to dw1000_dev_instance_t.
- * @param config    Pointer to the txrf configuration structure, which contains the txrf config data.
+ * @param config    Pointer to dw1000_dev_txrf_config_t.
  * @return void
  */
 void dw1000_phy_config_txrf(struct _dw1000_dev_instance_t * inst, dw1000_dev_txrf_config_t *config)
@@ -252,7 +252,7 @@ void dw1000_phy_config_txrf(struct _dw1000_dev_instance_t * inst, dw1000_dev_txr
 
 
 /**
- * This function reads the temperature of the DW1000 that was sampled
+ * API to read the temperature of the DW1000 that was sampled
  * on waking from Sleep/Deepsleep. They are not current values, but read on last
  * wakeup if DWT_TANDV bit is set in mode parameter of dwt_configuresleep.
  *
@@ -265,7 +265,7 @@ float dw1000_phy_read_wakeuptemp_SI(struct _dw1000_dev_instance_t * inst)
 }
 
 /**
- * This function reads the battery voltage of the DW1000 that was sampled
+ * API to read the battery voltage of the DW1000 that was sampled
  * on waking from Sleep/Deepsleep. They are not current values, but read on last
  * wakeup if DWT_TANDV bit is set in mode parameter of dwt_configuresleep.
  *
@@ -278,7 +278,7 @@ float dw1000_phy_read_read_wakeupvbat_SI(struct _dw1000_dev_instance_t * inst)
 }
 
 /**
- * This function resets the receiver of the DW1000.
+ * API to reset the receiver of the DW1000.
  *
  * @param inst   Pointer to dw1000_dev_instance_t.
  * @return void
@@ -293,7 +293,7 @@ void dw1000_phy_rx_reset(struct _dw1000_dev_instance_t * inst)
 
 
 /**
- * This turns off the transceiver.
+ * API to turn off the transceiver.
  *
  * @param inst  Pointer to dw1000_dev_instance_t.
  * @return void
@@ -328,7 +328,7 @@ void dw1000_phy_forcetrxoff(struct _dw1000_dev_instance_t * inst)
 }
 
 /**
- * This function enables the specified events to trigger an interrupt.
+ * API to enable the specified events to trigger an interrupt.
  * The following events can be enabled:
  * DWT_INT_TFRS         0x00000080          // frame sent
  * DWT_INT_RFCG         0x00004000          // frame received with good CRC
@@ -341,8 +341,8 @@ void dw1000_phy_forcetrxoff(struct _dw1000_dev_instance_t * inst)
  * DWT_INT_ARFE         0x20000000          // frame rejected (due to frame filtering configuration)
  *
  * @param inst      Pointer to dw1000_dev_instance_t.
- * @param bitmask   Sets the events which will generate interrupt.
- * @param enable    If set the interrupts are enabled else they are cleared.
+ * @param bitmask   Sets the events which generates interrupt.
+ * @param enable    If set, the interrupts are enabled else they are cleared.
  * @return void
  */
 void dw1000_phy_interrupt_mask(struct _dw1000_dev_instance_t * inst, uint32_t bitmask, uint8_t enable)
@@ -366,13 +366,13 @@ void dw1000_phy_interrupt_mask(struct _dw1000_dev_instance_t * inst, uint32_t bi
 }
 
 /**
- * This feature is used to synchronise DW1000 with external clocks or events or with other DW1000’s. 
+ * API to synchronise DW1000 with external clocks or events or with other DW1000’s. 
  * For example, this would be required in a TDOA RTLS system employing wired clock synchronisation of the 
  * anchor nodes or AoA node for phase measurement.
  * 
  * @param inst      Pointer to dw1000_dev_instance_t. 
  * @param delay     To configure DW1000 for OSTR mode, the delay value is set to the desired delay value.
- * @param enable    True/false 
+ * @param enable    True/false. 
  * @return void
  */
 void dw1000_phy_external_sync(struct _dw1000_dev_instance_t * inst, uint8_t delay, bool enable){
