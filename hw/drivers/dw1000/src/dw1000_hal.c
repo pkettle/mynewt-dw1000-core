@@ -199,13 +199,13 @@ hal_dw1000_inst(uint8_t idx){
     
 #if  MYNEWT_VAL(DW1000_DEVICE_0) 
 #if  MYNEWT_VAL(DW1000_DEVICE_1)
-    assert(idx < 2);  //!< Only two instance for chosen bsp
+    assert(idx < 2);  
 #else
-    assert(idx < 1);  //!< Only one instance for chosen bsp
+    assert(idx < 1);  
 #endif
     return &hal_dw1000_instances[idx];
 #else
-    assert(0);  //!< no instance for chosen bsp
+    assert(0);  
 #endif
 
 

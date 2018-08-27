@@ -342,7 +342,7 @@ dw1000_netif_init(struct netif *dw1000_netif){
 }
 
 /**
- * Low level output API to bridge 6lowpan and radio
+ * Low level output API to bridge 6lowpan and radio.
  *
  * @param dw1000_netif  Network interface.
  * @param p             Buffer to be sent to the radio. 
@@ -370,7 +370,7 @@ dw1000_ll_output(struct netif *dw1000_netif, struct pbuf *p){
  *
  * @param pt            Pointer to received buffer from radio.
  * @param dw1000_netif  Network interface. 
- * @retrun Error status 
+ * @return Error status 
  */
 err_t
 dw1000_ll_input(struct pbuf *pt, struct netif *dw1000_netif){

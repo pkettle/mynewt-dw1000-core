@@ -421,12 +421,12 @@ dw1000_range_reset_nodes(dw1000_dev_instance_t * inst, uint16_t node_addr[], uin
 }
 
 /**
- * API to reset the frames by rellocating the memory based on the number of frames parameter
+ * API to reset the frames by rellocating the memory based on the number of frames parameter.
  * and initializes the frames with the default values.
  *
- * @param inst         Pointer to dw1000_range_instance_t.
- * @param twr[]        Pointer to the array of frames.
- * @param nframes      Number of frames.
+ * @param inst      Pointer to dw1000_range_instance_t.
+ * @param twr[]     Pointer to the array of frames.
+ * @param nframes   Number of frames.
  * @return void
  */
 void

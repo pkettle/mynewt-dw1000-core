@@ -47,20 +47,20 @@ extern "C" {
 #include <lwip/pbuf.h>
 #include <lwip/ip_addr.h>
 
-//! Lwip config parameters
+//! Lwip config parameters.
 typedef struct _dw1000_lwip_config_t{
    uint16_t poll_resp_delay;    //!< Delay between frames, in UWB microseconds.
    uint16_t resp_timeout;       //!< Receive response timeout, in UWB microseconds.
    uint32_t uwbtime_to_systime; //!< UWB time to system time
 }dw1000_lwip_config_t;
 
-//! Lwip modes 
+//! Lwip modes. 
 typedef enum _dw1000_lwip_modes_t{
     LWIP_BLOCKING,              //!< lwip blocking mode
     LWIP_NONBLOCKING            //!< lwip non-blocking mode
 }dw1000_lwip_modes_t;
 
-//! Lwip status parameters
+//! Lwip status parameters.
 typedef struct _dw1000_lwip_status_t{
     uint32_t selfmalloc:1;             //!< Internal flag for memory garbage collection 
     uint32_t initialized:1;            //!< Instance allocated 
@@ -72,7 +72,7 @@ typedef struct _dw1000_lwip_status_t{
     uint32_t request_timeout:1;        //!< Set for request timeout
 }dw1000_lwip_status_t;
 
-//! lwip instance parameters
+//! Lwip instance parameters.
 typedef struct _dw1000_lwip_instance_t{
     struct _dw1000_dev_instance_t * dev;   //!< Structure for DW1000 instance 
     struct os_sem sem;                     //!< Structure for OS semaphores
@@ -88,16 +88,23 @@ typedef struct _dw1000_lwip_instance_t{
     char * data_buf[];                     //!< Data buffers 
 }dw1000_lwip_instance_t;
 
-//! lwip callback 
+//! Lwip callback. 
 typedef struct _dw1000_lwip_cb_t{
    void (*recv)(dw1000_dev_instance_t * inst, uint16_t timeout);  //!< Keep tracks of lwip tx/rx status
 }dw1000_lwip_cb_t;
 
-//! lwip context parameters 
+//! Lwip context parameters. 
 typedef struct _dw1000_lwip_context_t{
    dw1000_lwip_cb_t rx_cb;    //!< DW1000 lwip receive callback
 }dw1000_lwip_context_t;
 
+/**
+ * API to configure lwip.
+ *
+ * @param inst  pointer to dw1000_dev_instance_t
+ * @return dw1000_lwip_config_t
+ *
+ */
 dw1000_lwip_config_t *
 dw1000_config(dw1000_dev_instance_t * inst);
 

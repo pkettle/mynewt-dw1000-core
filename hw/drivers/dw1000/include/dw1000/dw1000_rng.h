@@ -64,7 +64,7 @@ typedef struct _dw1000_rng_config_t{
    uint16_t bias_correction:1;       //!< Enable range bias correction polynomial
 }dw1000_rng_config_t;
 
-//!< Range control parameters.
+//! Range control parameters.
 typedef struct _dw1000_rng_control_t{
     uint16_t delay_start_enabled:1;  //!< Set for enabling delayed start
 }dw1000_rng_control_t;
@@ -164,6 +164,17 @@ dw1000_rng_instance_t * dw1000_rng_init(dw1000_dev_instance_t * inst, dw1000_rng
 void dw1000_rng_free(dw1000_rng_instance_t * inst);
 dw1000_dev_status_t dw1000_rng_config(dw1000_dev_instance_t * inst, dw1000_rng_config_t * config);
 void dw1000_rng_set_callbacks(dw1000_dev_instance_t * inst,  dw1000_dev_cb_t rng_tx_complete_cb, dw1000_dev_cb_t rng_rx_complete_cb, dw1000_dev_cb_t rng_rx_timeout_cb,  dw1000_dev_cb_t rng_rx_error_cb);
+
+/**
+ * API to register extension callbacks.
+ *
+ * @param inst                          Pointer to dw1000_dev_instance_t.
+ * @param rng_rx_timeout_extension_cb   Receive timeout extension callback.
+ * @param rng_rx_error_extension_cb     Receive error extension callback.   
+ * @param rng_interface_extension_cb    Interface extension callback.
+ * @return void
+ */
+
 void dw1000_rng_set_callbacks_extension(dw1000_dev_instance_t * inst,  dw1000_dev_cb_t rng_rx_timeout_extension_cb, dw1000_dev_cb_t rng_rx_error_extension_cb,  dw1000_dev_cb_t rng_interface_extension_cb);
 dw1000_dev_status_t dw1000_rng_request(dw1000_dev_instance_t * inst, uint16_t dst_address, dw1000_rng_modes_t protocal);
 dw1000_dev_status_t dw1000_rng_request_delay_start(dw1000_dev_instance_t * inst, uint16_t dst_address, uint64_t delay, dw1000_rng_modes_t protocal);

@@ -267,7 +267,7 @@ float dw1000_phy_read_wakeuptemp_SI(struct _dw1000_dev_instance_t * inst)
 /**
  * API to read the battery voltage of the DW1000 that was sampled
  * on waking from Sleep/Deepsleep. They are not current values, but read on last
- * wakeup if DWT_TANDV bit is set in mode parameter of dwt_configuresleep.
+ * wakeup if DWT_TANDV bit is set in mode parameter of dwt_configure_sleep.
  *
  * @param inst    Pointer to dw1000_dev_instance_t. 
  * @return float  Value of battery voltage sensor in SI units (Volts).

@@ -133,10 +133,10 @@ typedef struct _dw1000_mac_cb_data_t {
     uint8_t  rx_flags;    //!< RX frame flags
 } dw1000_mac_cb_data_t;
 
-//! Callback type for all events
+//! Callback type for all events.
 typedef void (*dw1000_mac_cb_t)(struct _dw1000_dev_instance_t * inst, const dw1000_mac_cb_data_t *);
 
-//! Mac device parameters
+//! Mac device parameters.
 typedef struct _dw1000_mac_deviceentcnts_t{
     uint16_t PHE ;                    //!< Number of received header errors
     uint16_t RSL ;                    //!< Number of received frame sync loss events
@@ -152,7 +152,7 @@ typedef struct _dw1000_mac_deviceentcnts_t{
     uint16_t TXW ;                    //!< Power up warn
 } dw1000_mac_deviceentcnts_t ;
 
-//! Mac layer callbacks
+//! Mac layer callbacks.
 typedef struct _dw1000_mac_callbacks_t{
     void (* tx_complete_cb) (struct _dw1000_dev_instance_t *);  //!< Transmit complete callback
     void (* rx_complete_cb) (struct _dw1000_dev_instance_t *);  //!< Receive complete callback
@@ -171,9 +171,28 @@ struct _dw1000_dev_status_t dw1000_set_wait4resp(struct _dw1000_dev_instance_t *
 struct _dw1000_dev_status_t dw1000_start_rx(struct _dw1000_dev_instance_t * inst);
 struct _dw1000_dev_status_t dw1000_restart_rx(struct _dw1000_dev_instance_t * inst, struct _dw1000_dev_control_t control);
 void dw1000_write_tx_fctrl(struct _dw1000_dev_instance_t * inst, uint16_t txFrameLength, uint16_t txBufferOffset, bool ranging);
+
+/**
+ * API to read receive time.
+ *
+ * @param inst            Pointer to _dw1000_dev_instance_t.
+ * @param buffer          Buffer into which the data will be received.
+ * @param rxBufferOffset  Specifies an offset in the DW1000s RX Buffer from where it receives the data.
+ * @param length          Length of the buffer.
+ * @return void 
+ */
+
 void dw1000_read_rx(struct _dw1000_dev_instance_t * inst, uint8_t *buffer, uint16_t rxBufferOffset, uint16_t length);
 struct _dw1000_dev_status_t dw1000_sync_rxbufptrs(struct _dw1000_dev_instance_t * inst);
 struct _dw1000_dev_status_t dw1000_read_accdata(struct _dw1000_dev_instance_t * inst, uint8_t *buffer, uint16_t len, uint16_t accOffset);
+
+/**
+ * API to enable auto-acknowledgement delay.
+ * 
+ * @param inst    Pointer to _dw1000_dev_instance_t.
+ * @param delay   Delay to be set.
+ */
+
 struct _dw1000_dev_status_t dw1000_enable_autoack(struct _dw1000_dev_instance_t * inst, uint8_t delay);
 struct _dw1000_dev_status_t dw1000_set_dblrxbuff(struct _dw1000_dev_instance_t * inst, bool flag);
 void dw1000_set_callbacks(struct _dw1000_dev_instance_t * inst, dw1000_dev_cb_t cb_TxDone, dw1000_dev_cb_t cb_RxOk, dw1000_dev_cb_t cb_RxTo, dw1000_dev_cb_t cb_RxErr);

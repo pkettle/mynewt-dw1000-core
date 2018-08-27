@@ -402,7 +402,7 @@ provision_tx_complete_cb(dw1000_dev_instance_t * inst){
  * The outcome is a database of all the nearby nodes.
  *
  * @param inst  Pointer to dw1000_dev_instance_t.
- * @param mode  dw1000_dev_modes_t for DWT_BLOCKING, DWT_NONBLOCKING.
+ * @param mode  BLOCKING and NONBLOCKING modes.
  * @return dw1000_provision_status_t 
  */
 dw1000_provision_status_t 
