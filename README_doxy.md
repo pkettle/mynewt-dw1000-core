@@ -33,7 +33,7 @@ It builds the files in hw/drivers/dw1000.
  doxygen Doxyfile-dw1000.conf
 
 ```
-### Output Reading
+### Reading output
 
 Open the output file
 
