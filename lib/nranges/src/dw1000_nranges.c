@@ -76,13 +76,15 @@ dw1000_nranges_init(dw1000_dev_instance_t * inst,  dw1000_nranges_instance_t * n
 dw1000_dev_status_t 
 dw1000_nranges_request_delay_start(dw1000_dev_instance_t * inst, uint16_t dst_address, uint64_t delay, dw1000_rng_modes_t code){
 
+    dw1000_set_dblrxbuff(inst, true);
     dw1000_rng_instance_t * rng = inst->rng;    
 
     rng->control.delay_start_enabled = 1;
     rng->delay = delay;
     dw1000_nranges_request(inst, dst_address, code);
     rng->control.delay_start_enabled = 0;
-
+    dw1000_phy_forcetrxoff(inst);
+    dw1000_set_dblrxbuff(inst, false);
     return inst->status;
 }
 
@@ -138,7 +140,6 @@ nranges_rx_timeout_cb(dw1000_dev_instance_t * inst){
     dw1000_rng_instance_t * rng = inst->rng;
     dw1000_rng_config_t * config = inst->rng->config;
     twr_frame_t * frame = inst->rng->frames[(rng->idx)%rng->nframes];
-
 
     if(nranges->device_type == DWT_NRNG_INITIATOR)// only if the device is an initiator
     {
@@ -375,9 +376,7 @@ nranges_rx_complete_cb(dw1000_dev_instance_t * inst){
                         if(nranges->resp_count + nranges->timeout_count < nnodes)
                         {
                             rng->idx++;
-                            if((nranges->resp_count + nranges->timeout_count) == (nnodes-1))
-                                    dw1000_set_dblrxbuff(inst, false);
-                        }
+			}
                         else if(nranges->resp_count + nranges->timeout_count == nnodes)
                         {
                             os_sem_release(&nranges->sem);
@@ -563,7 +562,6 @@ void send_final_msg(dw1000_dev_instance_t * inst , twr_frame_t * frame)
 //    printf("final_cb\n");
     assert(nranges_instance);
     dw1000_nranges_instance_t * nranges = nranges_instance;
-    //dw1000_rng_config_t * config = inst->rng->config;
     frame->dst_address = 0xffff;
     frame->src_address = inst->my_short_address;
     frame->seq_num = (frame-1)->seq_num;
@@ -571,7 +569,6 @@ void send_final_msg(dw1000_dev_instance_t * inst , twr_frame_t * frame)
     dw1000_write_tx(inst, frame->array, 0, sizeof(twr_frame_final_t));
     dw1000_write_tx_fctrl(inst, sizeof(twr_frame_final_t), 0, true);
     dw1000_set_wait4resp(inst, true);
-    //dw1000_set_rx_timeout(inst, config->rx_timeout_period);
     nranges->resp_count = 0;
     nranges->timeout_count = 0;
     nranges->t1_final_flag = 0;
