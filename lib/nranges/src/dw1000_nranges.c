@@ -375,11 +375,10 @@ nranges_rx_complete_cb(dw1000_dev_instance_t * inst){
                         if(nranges->resp_count + nranges->timeout_count < nnodes)
                         {
                             rng->idx++;
-                            if((nranges->resp_count + nranges->timeout_count) == (nnodes-1))
-                                    dw1000_set_dblrxbuff(inst, false);
                         }
                         else if(nranges->resp_count + nranges->timeout_count == nnodes)
                         {
+
                             os_sem_release(&nranges->sem);
                         }
                         break;
@@ -533,8 +532,6 @@ nranges_rx_complete_cb(dw1000_dev_instance_t * inst){
                         if(nranges->resp_count + nranges->timeout_count < nnodes)
                         {
                             rng->idx++;
-			    if((nranges->resp_count + nranges->timeout_count) == (nnodes-1))
-				    dw1000_set_dblrxbuff(inst, false);
                         }
                         else if(nranges->resp_count + nranges->timeout_count == nnodes)
                         {
