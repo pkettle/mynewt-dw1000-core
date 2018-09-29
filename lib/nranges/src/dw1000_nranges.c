@@ -37,7 +37,7 @@
 #if MYNEWT_VAL(N_RANGES_NPLUS_TWO_MSGS)
 #include <nranges/dw1000_nranges.h>
 
-#define TX_HOLDOFF_DELTA_REQUEST     (0x280)
+#define TX_HOLDOFF_DELTA_REQUEST     (0x200)
 #define SLOT_ID_CONSTANT_REQUEST     (0x200)
 #define TX_HOLDOFF_DELTA_T1          (0x018B)
 #define TX_HOLDOFF_DELTA_T2          (0x120)
@@ -251,7 +251,7 @@ nranges_rx_complete_cb(dw1000_dev_instance_t * inst){
                             break;
 
                         uint64_t request_timestamp = dw1000_read_rxtime(inst);
-                        uint64_t response_tx_delay = request_timestamp + ((((uint64_t)(config->tx_holdoff_delay- TX_HOLDOFF_DELTA_REQUEST)) + ((uint64_t)inst->slot_id -1)* SLOT_ID_CONSTANT_REQUEST) << 16); // 0x200 is constant that by testing minimum time calculated to add delay. Below this value responces missed for nranges
+                        uint64_t response_tx_delay = request_timestamp + ((((uint64_t)(config->tx_holdoff_delay- TX_HOLDOFF_DELTA_REQUEST)) + ((uint64_t)inst->slot_id )* SLOT_ID_CONSTANT_REQUEST) << 16); // 0x200 is constant that by testing minimum time calculated to add delay. Below this value responces missed for nranges
 
                         uint64_t response_timestamp = (response_tx_delay & 0xFFFFFFFE00UL) + inst->tx_antenna_delay;
 
@@ -301,7 +301,7 @@ nranges_rx_complete_cb(dw1000_dev_instance_t * inst){
                         frame->code = DWT_DS_TWR_NRNG_T2;
 
                         uint64_t request_timestamp = dw1000_read_rxtime(inst);
-                        uint64_t response_tx_delay = request_timestamp + (((uint64_t)(config->tx_holdoff_delay - TX_HOLDOFF_DELTA_T1)) << 16);
+                        uint64_t response_tx_delay = request_timestamp + (((uint64_t)(config->tx_holdoff_delay)) << 16);
                         uint64_t response_timestamp = (response_tx_delay & 0xFFFFFFFE00UL) + inst->tx_antenna_delay;
 
                         frame->reception_timestamp = request_timestamp;
@@ -341,7 +341,7 @@ nranges_rx_complete_cb(dw1000_dev_instance_t * inst){
                         previous_frame->response_timestamp = frame->response_timestamp;
 
                         uint64_t request_timestamp = dw1000_read_rxtime(inst);
-                        uint64_t response_tx_delay = request_timestamp + ((((uint64_t)(config->tx_holdoff_delay - TX_HOLDOFF_DELTA_T2)) + ((uint64_t)inst->slot_id - 1) * SLOT_ID_CONSTANT_T2) << 16);
+                        uint64_t response_tx_delay = request_timestamp + ((((uint64_t)(config->tx_holdoff_delay - TX_HOLDOFF_DELTA_T2)) + ((uint64_t)inst->slot_id ) * SLOT_ID_CONSTANT_T2) << 16);
 
                         frame->request_timestamp = dw1000_read_txtime_lo(inst); // This corresponds to when the original request was actually sent
                         frame->response_timestamp = dw1000_read_rxtime_lo(inst);  // This corresponds to the response just received
