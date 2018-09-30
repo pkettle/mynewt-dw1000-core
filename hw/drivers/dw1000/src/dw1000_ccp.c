@@ -83,7 +83,7 @@ static bool ccp_tx_complete_cb(struct _dw1000_dev_instance_t * inst);
 static bool ccp_rx_error_cb(dw1000_dev_instance_t * inst);
 static bool ccp_rx_timeout_cb(dw1000_dev_instance_t * inst);
 static bool ccp_tx_error_cb(dw1000_dev_instance_t * inst);
-static struct _dw1000_ccp_status_t dw1000_ccp_blink(struct _dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode);
+struct _dw1000_ccp_status_t dw1000_ccp_blink(struct _dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode);
 #if MYNEWT_VAL(CLOCK_CALIBRATION_ENABLED) !=1
 static void ccp_postprocess(struct os_event * ev);
 #endif
@@ -146,7 +146,7 @@ ccp_timer_ev_cb(struct os_event *ev) {
 
     uint32_t cputime = os_cputime_get32() - os_cputime_usecs_to_ticks(MYNEWT_VAL(OS_LATENCY));
     if(dw1000_ccp_blink(inst, DWT_BLOCKING).start_tx_error) 
-      hal_timer_start_at(&ccp->timer, cputime + os_cputime_usecs_to_ticks(dw1000_dwt_usecs_to_usecs(ccp->period)));
+        hal_timer_start_at(&ccp->timer, cputime + os_cputime_usecs_to_ticks(dw1000_dwt_usecs_to_usecs(ccp->period)));
 }
 
 
@@ -394,9 +394,9 @@ ccp_rx_complete_cb(struct _dw1000_dev_instance_t * inst){
     frame->correction_factor = 1.0f +((float)tracking_offset) / tracking_interval;
 
     ccp->status.valid |= ccp->idx > ccp->nframes;
-    if (ccp->config.postprocess && ccp->status.valid) 
+    if (ccp->config.postprocess && ccp->status.valid) {
         os_eventq_put(os_eventq_dflt_get(), &ccp->callout_postprocess.c_ev);
-   else{
+    } else {
         inst->control = inst->control_rx_context;
         dw1000_restart_rx(inst,inst->control_rx_context);
     }
@@ -439,21 +439,33 @@ ccp_tx_complete_cb(struct _dw1000_dev_instance_t * inst){
     }
     //Advance frame idx 
     dw1000_ccp_instance_t * ccp = inst->ccp; 
+#ifdef VERBOSE
     ccp_frame_t * previous_frame = ccp->frames[(ccp->idx)%ccp->nframes]; 
+#endif
     ccp_frame_t * frame = ccp->frames[(++ccp->idx)%ccp->nframes];
 
-    printf("{\"utime\":%lu,\"ccp_tx\":[\"%llX\",\"%llX\"],\"seq_num\":%d}\n", 
-        os_cputime_ticks_to_usecs(os_cputime_get32()),
-        frame->transmission_timestamp,
-        (uint64_t)((uint64_t)(frame->transmission_timestamp) - (uint64_t)(previous_frame->transmission_timestamp)) & 0xFFFFFFFFF,
-        frame->seq_num
-    );
     if (ccp->status.timer_enabled){
         uint32_t cputime = os_cputime_get32() - os_cputime_usecs_to_ticks(MYNEWT_VAL(OS_LATENCY));
         hal_timer_start_at(&ccp->timer, cputime + os_cputime_usecs_to_ticks(dw1000_dwt_usecs_to_usecs(ccp->period - MYNEWT_VAL(OS_LATENCY))));
     }
 
     os_sem_release(&inst->ccp->sem);  
+    /* Local clock is always "valid" */
+    ccp->status.valid = 1;
+    /* Call the postprocess function in case we have a local tdma running */
+    if (ccp->config.postprocess) {
+        frame->reception_timestamp = frame->transmission_timestamp;
+        os_eventq_put(os_eventq_dflt_get(), &ccp->callout_postprocess.c_ev);
+    }
+
+#ifdef VERBOSE
+    printf("{\"utime\":%lu,\"ccp_tx\":[\"%llX\",\"%llX\"],\"seq_num\":%d}\n", 
+        os_cputime_ticks_to_usecs(os_cputime_get32()),
+        frame->transmission_timestamp,
+        (uint64_t)((uint64_t)(frame->transmission_timestamp) - (uint64_t)(previous_frame->transmission_timestamp)) & 0xFFFFFFFFF,
+        frame->seq_num
+    );
+#endif
     return true;
 }
 
@@ -513,9 +525,9 @@ ccp_rx_timeout_cb(struct _dw1000_dev_instance_t * inst){
  * @param mode   dw1000_ccp_modes_t for CCP_BLOCKING, CCP_NON_BLOCKING modes.
  * @return dw1000_ccp_status_t 
  */
-static dw1000_ccp_status_t 
-dw1000_ccp_blink(struct _dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode){
-
+dw1000_ccp_status_t
+dw1000_ccp_blink(struct _dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode)
+{
     os_error_t err = os_sem_pend(&inst->ccp->sem,  OS_TIMEOUT_NEVER);
     assert(err == OS_OK);
 
@@ -525,7 +537,7 @@ dw1000_ccp_blink(struct _dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode){
 
     frame->transmission_timestamp = previous_frame->transmission_timestamp + 2 * ((uint64_t)inst->ccp->period << 15);
     frame->seq_num += inst->ccp->nframes;
-    frame->long_address = inst->my_short_address;
+    frame->long_address = MYNEWT_VAL(UUID_CCP_MASTER);
 
     dw1000_write_tx(inst, frame->array, 0, sizeof(ieee_blink_frame_t));
     dw1000_write_tx_fctrl(inst, sizeof(ieee_blink_frame_t), 0, true); 
@@ -547,7 +559,7 @@ dw1000_ccp_blink(struct _dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode){
 }
 
 
-/** 
+/**
  * API to start clock calibration packets (CCP) blinks. 
  * With a pulse repetition period of MYNEWT_VAL(CCP_PERIOD).   
  *

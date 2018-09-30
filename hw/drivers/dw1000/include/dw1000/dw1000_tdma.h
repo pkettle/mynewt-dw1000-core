@@ -55,18 +55,24 @@ typedef struct _tdma_status_t{
 typedef struct _tdma_slot_t{
     struct _tdma_instance_t * parent;  //!< Pointer to _tdma_instance_ti
     struct hal_timer timer;            //!< Timer
-    struct os_callout event_cb;        //!< Sturcture of event_cb
+    struct os_callout event_cb;        //!< Structure of event_cb
     uint16_t idx;                      //!< Slot number
-    void * arg;                      //!< Optional argument
+    void * arg;                        //!< Optional argument
 }tdma_slot_t; 
+
+typedef enum _dw1000_tdma_type_t{
+    DWT_TDMA_CLOCK_MASTER,
+    DWT_TDMA_CLOCK_SLAVE
+} dw1000_tdma_type_t;
 
 //! Structure of tdma instance
 typedef struct _tdma_instance_t{
     struct _dw1000_dev_instance_t * parent;  //!< Pointer to _dw1000_dev_instance_t
     tdma_status_t status;                    //!< Status of tdma 
     struct os_mutex mutex;                   //!< Structure of os_mutex  
+    dw1000_tdma_type_t type;                 //!< If we run a local clock master
     uint16_t idx;                            //!< Slot number
-    uint16_t nslots;                         //!< NUmber of slots 
+    uint16_t nslots;                         //!< Number of slots
     uint32_t period;                         //!< Period of each tdma
 #ifdef TDMA_TASKS_ENABLE
     struct os_eventq eventq;                 //!< Structure of os events
@@ -78,7 +84,8 @@ typedef struct _tdma_instance_t{
     struct _tdma_slot_t * slot[];           //!< Dynamically allocated slot
 }tdma_instance_t; 
 
-struct _tdma_instance_t * tdma_init(struct _dw1000_dev_instance_t * inst, uint32_t period, uint16_t nslots);
+struct _tdma_instance_t * tdma_init(struct _dw1000_dev_instance_t * inst, uint32_t period,
+                                    uint16_t nslots, dw1000_tdma_type_t type);
 void tdma_free(struct _tdma_instance_t * inst);
 void tdma_assign_slot(struct _tdma_instance_t * inst, void (* callout )(struct os_event *), uint16_t idx, void * arg);
 void tdma_release_slot(struct _tdma_instance_t * inst, uint16_t idx);

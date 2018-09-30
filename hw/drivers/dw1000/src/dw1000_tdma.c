@@ -78,7 +78,9 @@ static void tdma_task(void *arg);
  */
 
 tdma_instance_t * 
-tdma_init(struct _dw1000_dev_instance_t * inst, uint32_t period, uint16_t nslots){
+tdma_init(struct _dw1000_dev_instance_t * inst, uint32_t period,
+          uint16_t nslots, dw1000_tdma_type_t type)
+{
     assert(inst);
     tdma_instance_t * tdma;
     if (inst->tdma == NULL) {
@@ -88,6 +90,7 @@ tdma_init(struct _dw1000_dev_instance_t * inst, uint32_t period, uint16_t nslots
         tdma->status.selfmalloc = 1;
         os_error_t err = os_mutex_init(&tdma->mutex);
         assert(err == OS_OK);
+        tdma->type = type;
         tdma->nslots = nslots; 
         tdma->period = period; 
         tdma->parent = inst;
@@ -249,10 +252,15 @@ tdma_superframe_event_cb(struct os_event * ev){
     uint32_t cputime = os_cputime_get32() - os_cputime_usecs_to_ticks(MYNEWT_VAL(OS_LATENCY));
     
     tdma->status.awaiting_superframe = 0;
-    hal_timer_start_at(&tdma->slot[0]->timer, cputime + os_cputime_usecs_to_ticks((uint32_t)dw1000_dwt_usecs_to_usecs(tdma->period)));
+    hal_timer_start_at(&tdma->slot[0]->timer,
+                       cputime + os_cputime_usecs_to_ticks(
+                           (uint32_t)dw1000_dwt_usecs_to_usecs(tdma->period)));
+
     for (uint16_t i = 1; i < tdma->nslots; i++) {
         if (tdma->slot[i]){
-            hal_timer_start_at(&tdma->slot[i]->timer, cputime + os_cputime_usecs_to_ticks((uint32_t)dw1000_dwt_usecs_to_usecs(i * tdma->period/tdma->nslots)));
+            hal_timer_start_at(&tdma->slot[i]->timer,
+                               cputime + os_cputime_usecs_to_ticks(
+                                   (uint32_t)dw1000_dwt_usecs_to_usecs(i * tdma->period/tdma->nslots)));
         }
     }
 }
@@ -285,13 +293,25 @@ slot0_event_cb(struct os_event * ev){
             os_cputime_timer_stop(&tdma->slot[i]->timer);
         }
     }
- 
+
     tdma->status.awaiting_superframe = 1; 
-    dw1000_set_delay_start(inst, 0);
-    dw1000_set_rx_timeout(inst, 0);
-    if(dw1000_start_rx(inst).start_rx_error){
-        uint32_t utime = os_cputime_ticks_to_usecs(os_cputime_get32());
-        printf("{\"utime\": %lu,\"msg\": \"slot0_timer_cb:start_rx_error\"}\n",utime);
+    if (tdma->type == DWT_TDMA_CLOCK_MASTER) {
+        if(dw1000_ccp_blink(inst, DWT_BLOCKING).start_tx_error) {
+            uint32_t utime = os_cputime_ticks_to_usecs(os_cputime_get32());
+            printf("{\"utime\": %lu,\"msg\": \"slot0_timer_cb:start_tx_error\"}\n",utime);
+
+            uint32_t cputime = os_cputime_get32() - os_cputime_usecs_to_ticks(MYNEWT_VAL(OS_LATENCY));
+            hal_timer_start_at(&tdma->slot[0]->timer,
+                               cputime + os_cputime_usecs_to_ticks(
+                                   (uint32_t)dw1000_dwt_usecs_to_usecs((tdma->period - MYNEWT_VAL(OS_LATENCY)))));
+        }
+    } else {
+        dw1000_set_delay_start(inst, 0);
+        dw1000_set_rx_timeout(inst, 0);
+        if(dw1000_start_rx(inst).start_rx_error){
+            uint32_t utime = os_cputime_ticks_to_usecs(os_cputime_get32());
+            printf("{\"utime\": %lu,\"msg\": \"slot0_timer_cb:start_rx_error\"}\n",utime);
+        }
     }
 }
 
