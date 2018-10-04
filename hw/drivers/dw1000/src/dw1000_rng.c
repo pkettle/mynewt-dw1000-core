@@ -112,7 +112,8 @@ dw1000_rng_init(dw1000_dev_instance_t * inst, dw1000_rng_config_t * config, uint
     }
 
     dw1000_rng_set_callbacks(inst, rng_tx_complete_cb, rng_rx_complete_cb, rng_rx_timeout_cb, rng_rx_error_cb);
-    dw1000_rng_set_tx_final_cb(inst, rng_tx_final_cb);
+    if(inst->rng_tx_final_cb == NULL)
+        dw1000_rng_set_tx_final_cb(inst, rng_tx_final_cb);
     dw1000_rng_set_complete_cb(inst, 0);
 
     inst->rng->control = (dw1000_rng_control_t){
@@ -471,9 +472,9 @@ static void
 rng_tx_complete_cb(dw1000_dev_instance_t * inst)
 {
     dw1000_rng_instance_t * rng = inst->rng; 
-    twr_frame_t * frame = rng->frames[(rng->idx)%rng->nframes];
 
     if (inst->fctrl == FCNTL_IEEE_RANGE_16){
+        twr_frame_t * frame = rng->frames[(rng->idx)%rng->nframes];
         // Unlock Semaphore after last transmission
         if (frame->code == DWT_SS_TWR_FINAL || frame->code == DWT_SS_TWR_T1){
             os_sem_release(&inst->rng->sem);  

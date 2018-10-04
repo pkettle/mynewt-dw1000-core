@@ -36,6 +36,9 @@ extern "C" {
 #include <dw1000/dw1000_rng.h>
 
 #define FCNTL_IEEE_N_RANGES_16 0x88C1
+#define FRAMES_PER_RANGE       2
+#define FIRST_FRAME_IDX        0
+#define SECOND_FRAME_IDX       1
 
 typedef enum _dw1000_nranges_modes_t{
     DWT_DS_TWR_NRNG = 17,
@@ -55,21 +58,71 @@ typedef enum _dw1000_nranges_device_type_t{
     DWT_NRNG_RESPONDER
 }dw1000_nranges_device_type_t;
 
+
+//! N-Ranges request frame
+typedef union {
+    struct  _nrng_request_frame_t{
+       struct _ieee_rng_request_frame_t;
+       uint8_t start_slot_id;    //!< First anchor slot_id allowed
+       uint8_t end_slot_id;      //!< Last anchor slot_id allowed
+    }__attribute__((__packed__,aligned(1)));
+    uint8_t array[sizeof(struct _nrng_request_frame_t)]; //!< Array of size nrng request frame
+} nrng_request_frame_t;
+
+//! N-Ranges response frame
+typedef union {
+    struct  _nrng_response_frame_t{
+       struct _nrng_request_frame_t;
+       uint8_t slot_id;  //!< slot_id of transmitting anchor
+       uint32_t reception_timestamp;//!< Request reception timestamp
+       uint32_t transmission_timestamp; //!< Response tx timestamp
+    }__attribute__((__packed__,aligned(1)));
+    uint8_t array[sizeof(struct _nrng_response_frame_t)]; //!< Array of size nrng response frame
+} nrng_response_frame_t;
+
+//! N-Ranges response frame
+typedef union {
+    struct  _nrng_final_frame_t{
+       struct _nrng_response_frame_t;
+       uint32_t request_timestamp;
+       uint32_t response_timestamp;
+    }__attribute__((__packed__,aligned(1)));
+    uint8_t array[sizeof(struct _nrng_final_frame_t)]; //!< Array of size range final frame
+} nrng_final_frame_t;
+
+//! N-Ranges ext response frame format
+typedef union {
+    struct _nrng_frame_t{
+        struct _nrng_final_frame_t;
+#ifdef DS_TWR_EXT_ENABLE
+        union {
+            struct _twr_data_t;                            //!< Structure of twr_data
+            uint8_t payload[sizeof(struct _twr_data_t)];   //!< Payload of size twr_data 
+        };
+#endif
+    } __attribute__((__packed__, aligned(1)));
+    uint8_t array[sizeof(struct _nrng_frame_t)];        //!< Array of size twr_frame
+} nrng_frame_t;
+
 typedef struct _dw1000_nranges_instance_t{
+    uint16_t nframes;
     uint16_t nnodes;
     uint16_t resp_count;
     uint16_t timeout_count;
     uint16_t t1_final_flag;
     dw1000_nranges_device_type_t device_type;
     struct os_sem sem;
+    uint16_t idx;
+    nrng_frame_t *frames[][FRAMES_PER_RANGE];
 }dw1000_nranges_instance_t;
 
-dw1000_nranges_instance_t * dw1000_nranges_init(dw1000_dev_instance_t * inst,  dw1000_nranges_instance_t * nranges);
+dw1000_nranges_instance_t * dw1000_nranges_init(dw1000_dev_instance_t * inst,  dw1000_nranges_device_type_t type,uint16_t nframes, uint16_t nnodes);
 dw1000_dev_status_t dw1000_nranges_request_delay_start(dw1000_dev_instance_t * inst, uint16_t dst_address, uint64_t delay, dw1000_rng_modes_t code);
 dw1000_dev_status_t dw1000_nranges_request(dw1000_dev_instance_t * inst, uint16_t dst_address, dw1000_nranges_modes_t code);
 void dw1000_nranges_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t nranges_cbs);
-void send_final_msg(dw1000_dev_instance_t * inst, twr_frame_t * frame);
-float dw1000_nranges_twr_to_tof_frames(twr_frame_t *first_frame, twr_frame_t *final_frame);
+void send_final_msg(dw1000_dev_instance_t * inst, nrng_frame_t * frame);
+float dw1000_nranges_twr_to_tof_frames(nrng_frame_t *first_frame, nrng_frame_t *final_frame);
+void dw1000_nrng_set_frames(dw1000_dev_instance_t* inst, nrng_frame_t twr[], uint16_t nframes);
 
 #ifdef __cplusplus
 }
