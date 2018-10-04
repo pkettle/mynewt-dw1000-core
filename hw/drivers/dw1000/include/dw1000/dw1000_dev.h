@@ -102,6 +102,10 @@ typedef struct _dw1000_dev_status_t{
     uint32_t tx_ranging_frame:1;      //!< Range Request bit set for outbound frame
     uint32_t sleep_enabled:1;         //!< Indicates sleep_enabled bit is set
     uint32_t sleeping:1;              //!< Indicates sleeping state
+
+    uint32_t sem_force_released:1;    //!< Semaphore was released in forcetrxoff
+
+    uint32_t rx_buffer_overrun_error:1;//!< Dblbuffer overrun detected
 }dw1000_dev_status_t;
 
 //! Device control status bits.
@@ -184,6 +188,16 @@ typedef struct _dw1000_dev_rxdiag_t{
     uint16_t    pacc_cnt;           //!<  Count of preamble symbols accumulated
 } dw1000_dev_rxdiag_t;
 
+//! physical attributes per IEEE802.15.4-2011 standard, Table 101
+typedef struct _phy_attributes_t{
+    float Tpsym;
+    float Tbsym;
+    float Tdsym;
+    uint8_t nsfd;  
+    uint8_t nphr;    
+    uint16_t nsync;  
+} phy_attributes_t;
+
 struct _dw1000_dev_instance_t;
 
 //! DW1000 generic  extension callback structure
@@ -203,9 +217,9 @@ typedef struct _dw1000_extension_callback_t{
 //! Device instance parameters.
 typedef struct _dw1000_dev_instance_t{
     struct os_dev uwb_dev;                     //!< Has to be here for cast in create_dev to work 
-    struct os_mutex *spi_mutex;                //!< Pointer to global spi mutex if available  
+    struct os_sem *spi_sem;                    //!< Pointer to global spi bus semaphore
     struct os_sem sem;                         //!< semphore for low level mac/phy functions
-     struct os_mutex mutex;                    //!< os_mutex
+    struct os_mutex mutex;                     //!< os_mutex
 
     void (* tx_complete_cb) (struct _dw1000_dev_instance_t *);
     void (* rx_complete_cb) (struct _dw1000_dev_instance_t *);
@@ -290,11 +304,12 @@ typedef struct _dw1000_dev_instance_t{
     dw1000_dev_control_t control_tx_context;       //!< DW1000 device control transmit context  
     dw1000_dev_status_t status;                    //!< DW1000 device status 
     dw1000_dev_role_t dev_type;                    //!< Type of the device (tag/node)
+    struct _phy_attributes_t attrib;
 }dw1000_dev_instance_t;
 
 //! SPI parameters
 struct dw1000_dev_cfg {
-    struct os_mutex *spi_mutex;                    //!< Pointer to os_mutex structure  
+    struct os_sem *spi_sem;                        //!< Pointer to os_sem structure to lock spi bus
     int spi_num;                                   //!< SPI number
 };
 
@@ -318,7 +333,7 @@ void dw1000_add_extension_callbacks(dw1000_dev_instance_t* inst, dw1000_extensio
 void dw1000_remove_extension_callbacks(dw1000_dev_instance_t* inst, dw1000_extension_id_t id);
 
 #define dw1000_dwt_usecs_to_usecs(_t) (float)( _t * (0x10000/(128*499.2))) 
-#define dw1000_usecs_to_dwt_usecs(_t) (float)( _t * dw1000_dwt_usecs_to_usecs(1.0)) 
+#define dw1000_usecs_to_dwt_usecs(_t) (float)( _t / dw1000_dwt_usecs_to_usecs(1.0)) 
 
 #ifdef __cplusplus
 }
