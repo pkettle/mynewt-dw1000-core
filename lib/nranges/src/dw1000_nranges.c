@@ -98,13 +98,13 @@ dw1000_nrng_set_frames(dw1000_dev_instance_t * inst, nrng_frame_t twr[], uint16_
 }
 
 dw1000_dev_status_t 
-dw1000_nranges_request_delay_start(dw1000_dev_instance_t * inst, uint16_t dst_address, uint64_t delay, dw1000_rng_modes_t code){
+dw1000_nranges_request_delay_start(dw1000_dev_instance_t * inst, uint16_t dst_address, uint64_t delay, dw1000_rng_modes_t code, uint16_t start_slot_id, uint16_t end_slot_id){
 
     dw1000_rng_instance_t * rng = inst->rng;    
 
     rng->control.delay_start_enabled = 1;
     rng->delay = delay;
-    dw1000_nranges_request(inst, dst_address, code);
+    dw1000_nranges_request(inst, dst_address, code, start_slot_id, end_slot_id);
     rng->control.delay_start_enabled = 0;
     dw1000_phy_forcetrxoff(inst);
     return inst->status;
@@ -112,7 +112,7 @@ dw1000_nranges_request_delay_start(dw1000_dev_instance_t * inst, uint16_t dst_ad
 
 
 dw1000_dev_status_t
-dw1000_nranges_request(dw1000_dev_instance_t * inst, uint16_t dst_address, dw1000_nranges_modes_t code){
+dw1000_nranges_request(dw1000_dev_instance_t * inst, uint16_t dst_address, dw1000_nranges_modes_t code, uint16_t start_slot_id, uint16_t end_slot_id){
 
     // This function executes on the device that initiates a request
     assert(nranges_instance);
@@ -128,8 +128,8 @@ dw1000_nranges_request(dw1000_dev_instance_t * inst, uint16_t dst_address, dw100
     frame->code = code;
     frame->src_address = inst->my_short_address;
     frame->dst_address = dst_address;
-    frame->start_slot_id = 1;
-    frame->end_slot_id = 3;
+    frame->start_slot_id = start_slot_id;
+    frame->end_slot_id = end_slot_id;
     dw1000_write_tx(inst, frame->array, 0, sizeof(nrng_request_frame_t));
     dw1000_write_tx_fctrl(inst, sizeof(nrng_request_frame_t), 0, true);
     dw1000_set_wait4resp(inst, true);

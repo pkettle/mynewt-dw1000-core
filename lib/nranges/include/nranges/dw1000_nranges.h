@@ -117,8 +117,8 @@ typedef struct _dw1000_nranges_instance_t{
 }dw1000_nranges_instance_t;
 
 dw1000_nranges_instance_t * dw1000_nranges_init(dw1000_dev_instance_t * inst,  dw1000_nranges_device_type_t type,uint16_t nframes, uint16_t nnodes);
-dw1000_dev_status_t dw1000_nranges_request_delay_start(dw1000_dev_instance_t * inst, uint16_t dst_address, uint64_t delay, dw1000_rng_modes_t code);
-dw1000_dev_status_t dw1000_nranges_request(dw1000_dev_instance_t * inst, uint16_t dst_address, dw1000_nranges_modes_t code);
+dw1000_dev_status_t dw1000_nranges_request_delay_start(dw1000_dev_instance_t * inst, uint16_t dst_address, uint64_t delay, dw1000_rng_modes_t code, uint16_t start_slot_id, uint16_t end_slot_id);
+dw1000_dev_status_t dw1000_nranges_request(dw1000_dev_instance_t * inst, uint16_t dst_address, dw1000_nranges_modes_t code, uint16_t start_slot_id, uint16_t end_slot_id);
 void dw1000_nranges_set_ext_callbacks(dw1000_dev_instance_t * inst, dw1000_extension_callbacks_t nranges_cbs);
 void send_final_msg(dw1000_dev_instance_t * inst, nrng_frame_t * frame);
 float dw1000_nranges_twr_to_tof_frames(nrng_frame_t *first_frame, nrng_frame_t *final_frame);
