@@ -133,7 +133,11 @@ dw1000_nranges_request(dw1000_dev_instance_t * inst, uint16_t dst_address, dw100
     dw1000_write_tx(inst, frame->array, 0, sizeof(nrng_request_frame_t));
     dw1000_write_tx_fctrl(inst, sizeof(nrng_request_frame_t), 0, true);
     dw1000_set_wait4resp(inst, true);
-    dw1000_set_rx_timeout(inst, config->rx_timeout_period);
+    uint16_t timeout = (frame->end_slot_id - inst->slot_id + 1)*(dw1000_phy_frame_duration(&inst->attrib, sizeof(nrng_request_frame_t))
+                    + config->tx_guard_delay
+                    + config->rx_timeout_period         // 2 * ToF, 1us ~= 300m
+                    + config->tx_holdoff_delay);         // Remote side turn arroud time.
+    dw1000_set_rx_timeout(inst, timeout);
     if (rng->control.delay_start_enabled)
         dw1000_set_delay_start(inst, rng->delay);
     if (dw1000_start_tx(inst).start_tx_error){
@@ -178,7 +182,11 @@ nranges_rx_timeout_cb(dw1000_dev_instance_t * inst){
         }
         else if(nranges->resp_count + nranges->timeout_count < nranges->nnodes)
         {
-            dw1000_set_rx_timeout(inst, config->rx_timeout_period);
+           uint16_t timeout = dw1000_phy_frame_duration(&inst->attrib, sizeof(nrng_final_frame_t))
+                  + config->tx_guard_delay
+                  + config->rx_timeout_period         // 2 * ToF, 1us ~= 300m
+                  + config->tx_holdoff_delay;         // Remote side turn arroud time.
+            dw1000_set_rx_timeout(inst, timeout);
             dw1000_start_rx(inst);
         }
         else
@@ -273,8 +281,7 @@ nranges_rx_complete_cb(dw1000_dev_instance_t * inst){
                             break;
 
                         uint64_t request_timestamp = dw1000_read_rxtime(inst);
-                        uint64_t response_tx_delay = request_timestamp + ((((uint64_t)(config->tx_holdoff_delay- TX_HOLDOFF_DELTA_REQUEST)) + ((uint64_t)inst->slot_id )* SLOT_ID_CONSTANT_REQUEST) << 16); // 0x200 is constant that by testing minimum time calculated to add delay. Below this value responces missed for nranges
-
+                        uint64_t response_tx_delay = request_timestamp + (((uint64_t)config->tx_holdoff_delay + ((uint64_t)(slot_id-1) * ((uint64_t)config->tx_guard_delay +  dw1000_phy_frame_duration(&inst->attrib, sizeof(nrng_response_frame_t)))))<< 16);
                         uint64_t response_timestamp = (response_tx_delay & 0xFFFFFFFE00UL) + inst->tx_antenna_delay;
 
                         frame->reception_timestamp =  request_timestamp;
@@ -288,7 +295,11 @@ nranges_rx_complete_cb(dw1000_dev_instance_t * inst){
                         dw1000_write_tx(inst, frame->array, 0, sizeof(nrng_response_frame_t));
                         dw1000_write_tx_fctrl(inst, sizeof(nrng_response_frame_t), 0, true);
                         dw1000_set_wait4resp(inst, true);
-                        dw1000_set_rx_timeout(inst, config->rx_timeout_period);
+                        uint16_t timeout =(frame->end_slot_id - slot_id + 1) * (dw1000_phy_frame_duration(&inst->attrib, sizeof(nrng_response_frame_t))
+                            + config->rx_timeout_period
+                            + config->tx_guard_delay
+                            + config->tx_holdoff_delay);         // Remote side turn arroud time.
+                        dw1000_set_rx_timeout(inst, timeout);
                         dw1000_set_delay_start(inst, response_tx_delay);
                         if (dw1000_start_tx(inst).start_tx_error)
                             os_sem_release(&nranges->sem);
@@ -342,7 +353,12 @@ nranges_rx_complete_cb(dw1000_dev_instance_t * inst){
                             dw1000_write_tx(inst, frame->array, 0, sizeof(nrng_final_frame_t));
                             dw1000_write_tx_fctrl(inst, sizeof(nrng_final_frame_t), 0, true);
                             dw1000_set_wait4resp(inst, true);
-                            dw1000_set_rx_timeout(inst, config->rx_timeout_period);
+
+                            uint16_t timeout = dw1000_phy_frame_duration(&inst->attrib, sizeof(nrng_final_frame_t))
+                                + config->tx_guard_delay
+                                + config->rx_timeout_period
+                                + config->tx_holdoff_delay;         // Remote side turn arroud time.
+                            dw1000_set_rx_timeout(inst, timeout);
                             dw1000_set_delay_start(inst, response_tx_delay);
                             nranges->resp_count = 0;
                             nranges->timeout_count = 0;
@@ -350,7 +366,11 @@ nranges_rx_complete_cb(dw1000_dev_instance_t * inst){
                             if (dw1000_start_tx(inst).start_tx_error)
                                 os_sem_release(&nranges->sem);
                         }else{
-                            dw1000_set_rx_timeout(inst, config->rx_timeout_period);
+                            uint16_t timeout = dw1000_phy_frame_duration(&inst->attrib, sizeof(nrng_final_frame_t))
+                                + config->tx_guard_delay
+                                + config->rx_timeout_period
+                                + config->tx_holdoff_delay;         // Remote side turn arroud time.
+                            dw1000_set_rx_timeout(inst, timeout);
                             dw1000_start_rx(inst);
                         }
                         break;
@@ -375,8 +395,7 @@ nranges_rx_complete_cb(dw1000_dev_instance_t * inst){
                         previous_frame->response_timestamp = frame->response_timestamp;
 
                         uint64_t request_timestamp = dw1000_read_rxtime(inst);
-                        uint64_t response_tx_delay = request_timestamp + ((((uint64_t)(config->tx_holdoff_delay - TX_HOLDOFF_DELTA_T2)) + ((uint64_t)inst->slot_id ) * SLOT_ID_CONSTANT_T2) << 16);
-
+                        uint64_t response_tx_delay = request_timestamp + (((uint64_t)config->tx_holdoff_delay + ((uint64_t)(inst->slot_id-1) * ((uint64_t)config->tx_guard_delay +  dw1000_phy_frame_duration(&inst->attrib, sizeof(nrng_final_frame_t)))))<< 16);
                         frame->request_timestamp = dw1000_read_txtime_lo(inst); // This corresponds to when the original request was actually sent
                         frame->response_timestamp = dw1000_read_rxtime_lo(inst);  // This corresponds to the response just received
                         frame->dst_address = frame->src_address;
@@ -385,7 +404,11 @@ nranges_rx_complete_cb(dw1000_dev_instance_t * inst){
                         frame->slot_id = slot_id;
                         dw1000_write_tx(inst, frame->array, 0, sizeof(nrng_final_frame_t));
                         dw1000_write_tx_fctrl(inst, sizeof(nrng_final_frame_t), 0, true);
-                        dw1000_set_rx_timeout(inst, config->rx_timeout_period);
+                        uint16_t timeout =(frame->end_slot_id - slot_id + 1)* (dw1000_phy_frame_duration(&inst->attrib, sizeof(nrng_final_frame_t))
+                                + config->tx_guard_delay
+                                + config->rx_timeout_period
+                                + config->tx_holdoff_delay);         // Remote side turn arroud time.
+                        dw1000_set_rx_timeout(inst, timeout);
                         dw1000_set_delay_start(inst, response_tx_delay);
                         if (dw1000_start_tx(inst).start_tx_error)
                             os_sem_release(&nranges->sem);
@@ -412,7 +435,11 @@ nranges_rx_complete_cb(dw1000_dev_instance_t * inst){
                         frame->transmission_timestamp = dw1000_read_txtime_lo(inst);
                         if(nranges->resp_count + nranges->timeout_count < nnodes)
                         {
-                            dw1000_set_rx_timeout(inst, config->rx_timeout_period);
+                            uint16_t timeout = dw1000_phy_frame_duration(&inst->attrib, sizeof(nrng_final_frame_t))
+                                + config->tx_guard_delay
+                                + config->rx_timeout_period         // 2 * ToF, 1us ~= 300m
+                                + config->tx_holdoff_delay;         // Remote side turn arroud time.
+                            dw1000_set_rx_timeout(inst, timeout);
                             dw1000_start_rx(inst);
                         }
                         else if(nranges->resp_count + nranges->timeout_count == nnodes)
@@ -617,7 +644,12 @@ void send_final_msg(dw1000_dev_instance_t * inst , nrng_frame_t * frame)
     dw1000_write_tx(inst, frame->array, 0, sizeof(nrng_final_frame_t));
     dw1000_write_tx_fctrl(inst, sizeof(nrng_final_frame_t), 0, true);
     dw1000_set_wait4resp(inst, true);
-    dw1000_set_rx_timeout(inst, config->rx_timeout_period);
+    uint16_t timeout = dw1000_phy_frame_duration(&inst->attrib, sizeof(nrng_final_frame_t))
+                    + config->tx_guard_delay
+                    + config->rx_timeout_period         // 2 * ToF, 1us ~= 300m
+                    + config->tx_holdoff_delay;         // Remote side turn arroud time.
+    dw1000_set_rx_timeout(inst, timeout);
+
     nranges->resp_count = 0;
     nranges->timeout_count = 0;
     nranges->t1_final_flag = 0;
