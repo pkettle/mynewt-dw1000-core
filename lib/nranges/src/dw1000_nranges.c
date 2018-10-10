@@ -49,7 +49,7 @@ dw1000_nranges_init(dw1000_dev_instance_t * inst, dw1000_nranges_device_type_t t
     assert(inst);
 
     if (nranges_instance == NULL ) {
-        nranges_instance = (dw1000_nranges_instance_t*) malloc(sizeof(dw1000_nranges_instance_t) + (nframes/FRAMES_PER_RANGE) * sizeof(nrng_frame_t*)); // struct + flexible array member
+        nranges_instance = (dw1000_nranges_instance_t*) malloc(sizeof(dw1000_nranges_instance_t) + (nframes) * sizeof(nrng_frame_t*)); // struct + flexible array member
         assert(nranges_instance);
         memset(nranges_instance, 0, sizeof(dw1000_nranges_instance_t));
     }
@@ -62,7 +62,7 @@ dw1000_nranges_init(dw1000_dev_instance_t * inst, dw1000_nranges_device_type_t t
     nranges->resp_count = nranges->timeout_count = nranges->t1_final_flag = 0;
  
     dw1000_extension_callbacks_t nranges_cbs;
-
+    nranges_cbs.id = DW1000_N_RANGES;
     os_error_t err = os_sem_init(&nranges->sem, 0x1);
     assert(err == OS_OK);
     dw1000_set_dblrxbuff(inst, true);
@@ -71,6 +71,7 @@ dw1000_nranges_init(dw1000_dev_instance_t * inst, dw1000_nranges_device_type_t t
     nranges_cbs.rx_timeout_cb = nranges_rx_timeout_cb;
     nranges_cbs.rx_error_cb = nranges_rx_error_cb;
     nranges_cbs.tx_error_cb = nranges_tx_error_cb;
+    nranges_cbs.reset_cb = NULL;
     dw1000_nranges_set_ext_callbacks(inst, nranges_cbs);
     if(type == DWT_NRNG_RESPONDER)
         dw1000_rng_set_tx_final_cb(inst, nrng_tx_final_cb);
@@ -145,7 +146,7 @@ dw1000_nranges_request(dw1000_dev_instance_t * inst, uint16_t dst_address, dw100
     }
     err = os_sem_pend(&nranges->sem, OS_TIMEOUT_NEVER); // Wait for completion of transactions
     os_sem_release(&nranges->sem);
-   return inst->status;
+    return inst->status;
 }
 
 static bool
