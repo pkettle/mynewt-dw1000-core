@@ -449,7 +449,6 @@ ccp_rx_complete_cb(struct _dw1000_dev_instance_t * inst){
     ccp_frame_t * frame = ccp->frames[(ccp->idx++)%ccp->nframes];
     ccp->os_epoch = os_cputime_get32();
  
-    DIAGMSG("{\"utime\": %lu,\"msg\": \"ccp_rx_complete_cb\"}\n",os_cputime_ticks_to_usecs(os_cputime_get32()));
   
     dw1000_read_rx(inst, frame->array, 0, sizeof(ieee_blink_frame_t));
 
@@ -458,7 +457,6 @@ ccp_rx_complete_cb(struct _dw1000_dev_instance_t * inst){
 #else
     ccp->epoch = frame->reception_timestamp = dw1000_read_rxtime(inst);
 #endif
-
     int32_t tracking_interval = (int32_t) dw1000_read_reg(inst, RX_TTCKI_ID, 0, sizeof(int32_t));
     int32_t tracking_offset = (int32_t)(((uint32_t) dw1000_read_reg(inst, RX_TTCKO_ID, 0, sizeof(uint32_t)) & RX_TTCKO_RXTOFS_MASK) << 13) >> 13;
     frame->correction_factor = 1.0f +((float)tracking_offset) / tracking_interval;
@@ -555,10 +553,9 @@ ccp_rx_error_cb(struct _dw1000_dev_instance_t * inst){
 static bool
 ccp_tx_error_cb(struct _dw1000_dev_instance_t * inst){
 
-    if(inst->fctrl_array[0] == FCNTL_IEEE_BLINK_CCP_64){
+    if (os_sem_get_count(&inst->ccp->sem) == 0){
         printf("{\"utime\": %lu,\"log\": \"ccp_tx_error_cb\",\"%s\":%d}\n",os_cputime_ticks_to_usecs(os_cputime_get32()),__FILE__, __LINE__); 
         os_sem_release(&inst->ccp->sem);  
-        return true;
     }
     return false;
 }
@@ -575,7 +572,6 @@ ccp_rx_timeout_cb(struct _dw1000_dev_instance_t * inst){
     if (os_sem_get_count(&inst->ccp->sem) == 0){
         printf("{\"utime\": %lu,\"log\": \"ccp_rx_timeout_cb\",\"%s\":%d}\n",os_cputime_ticks_to_usecs(os_cputime_get32()),__FILE__, __LINE__); 
         os_sem_release(&inst->ccp->sem);  
-        return true;
     }
     return false;
 }
@@ -621,7 +617,7 @@ dw1000_ccp_send(struct _dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode){
 
     frame->transmission_timestamp = previous_frame->transmission_timestamp + ((uint64_t)inst->ccp->period << 16);
     frame->seq_num += inst->ccp->nframes;
-    frame->long_address = inst->my_short_address;
+    frame->long_address = inst->clock_master;
 
     dw1000_write_tx(inst, frame->array, 0, sizeof(ieee_blink_frame_t));
     dw1000_write_tx_fctrl(inst, sizeof(ieee_blink_frame_t), 0, true); 
