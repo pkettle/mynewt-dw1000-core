@@ -553,9 +553,11 @@ ccp_rx_error_cb(struct _dw1000_dev_instance_t * inst){
 static bool
 ccp_tx_error_cb(struct _dw1000_dev_instance_t * inst){
 
-    if (os_sem_get_count(&inst->ccp->sem) == 0){
+    //if (os_sem_get_count(&inst->ccp->sem) == 0){
+    if(inst->fctrl_array[0] == FCNTL_IEEE_BLINK_CCP_64){
         printf("{\"utime\": %lu,\"log\": \"ccp_tx_error_cb\",\"%s\":%d}\n",os_cputime_ticks_to_usecs(os_cputime_get32()),__FILE__, __LINE__); 
         os_sem_release(&inst->ccp->sem);  
+        return true;
     }
     return false;
 }
@@ -572,6 +574,7 @@ ccp_rx_timeout_cb(struct _dw1000_dev_instance_t * inst){
     if (os_sem_get_count(&inst->ccp->sem) == 0){
         printf("{\"utime\": %lu,\"log\": \"ccp_rx_timeout_cb\",\"%s\":%d}\n",os_cputime_ticks_to_usecs(os_cputime_get32()),__FILE__, __LINE__); 
         os_sem_release(&inst->ccp->sem);  
+        return true;
     }
     return false;
 }
