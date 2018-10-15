@@ -171,9 +171,9 @@ nranges_rx_timeout_cb(dw1000_dev_instance_t * inst){
         }
         else if(nranges->resp_count + nranges->timeout_count < nranges->nnodes)
         {
-            if(nranges->resp_count == 0){
+            if(nranges->resp_count + nranges->timeout_count == 1){
                 // Tx holdoff delay is only required to be added once to wait for the first response
-                // If no response has been received then its the first timeout after the request or T1 Response
+                // If no response has been received then the total count will be 1 after the request or T1 Response
                 // and hence subtract the tx_holdoff_delay from the timeout value but add the guard delay
                 uint16_t current_timeout =0;
                 dw1000_read(inst, RX_FWTO_ID, RX_FWTO_OFFSET,(uint8_t*)&current_timeout, sizeof(uint16_t));
@@ -303,7 +303,9 @@ nranges_rx_complete_cb(dw1000_dev_instance_t * inst){
                         nranges->resp_count++;
                         uint16_t nnodes = nranges->nnodes;
                         if(nranges->resp_count + nranges->timeout_count < nnodes){
-                            if(nranges->resp_count == 1){
+                            // If the total count is 1 then its the first response. Hence subtract the holdoff delay from the 
+                            // timeout and introduce the tx_guard_delay
+                            if(nranges->resp_count + nranges->timeout_count == 1){
                                 uint16_t timeout = dw1000_phy_frame_duration(&inst->attrib, sizeof(nrng_response_frame_t))
                                     + config->tx_guard_delay
                                     + config->rx_timeout_period;
@@ -411,7 +413,7 @@ nranges_rx_complete_cb(dw1000_dev_instance_t * inst){
                         nranges->resp_count++;
                         uint16_t nnodes = nranges->nnodes;
                         if(nranges->resp_count + nranges->timeout_count < nnodes){
-                            if(nranges->resp_count == 1){
+                            if(nranges->resp_count + nranges->timeout_count == 1){
                                 uint16_t timeout = dw1000_phy_frame_duration(&inst->attrib, sizeof(nrng_final_frame_t))
                                     + config->tx_guard_delay
                                     + config->rx_timeout_period;         // 2 * ToF, 1us ~= 300m
