@@ -45,7 +45,7 @@
 
 #include <dw1000/dw1000_dev.h>
 #include <dw1000/dw1000_hal.h>
-#include <tdma/dw1000_tdma.h>
+#include <tdma/tdma.h>
 
 //#define DIAGMSG(s,u) printf(s,u)
 #ifndef DIAGMSG
@@ -54,8 +54,8 @@
 
 static void tdma_superframe_event_cb(struct os_event * ev);
 static void slot_timer_cb(void * arg);
-static bool tdma_rx_complete_cb(struct _dw1000_dev_instance_t * inst);
-static bool tdma_tx_complete_cb(struct _dw1000_dev_instance_t * inst);
+static bool rx_complete_cb(struct _dw1000_dev_instance_t * inst, dw1000_mac_interface_t *);
+static bool tx_complete_cb(struct _dw1000_dev_instance_t * inst, dw1000_mac_interface_t *);
 
 #ifdef TDMA_TASKS_ENABLE
 static void tdma_tasks_init(struct _tdma_instance_t * inst);
@@ -96,13 +96,12 @@ tdma_init(struct _dw1000_dev_instance_t * inst, uint32_t period, uint16_t nslots
         tdma = inst->tdma;
     }
 
-    dw1000_extension_callbacks_t tdma_cbs = {
+    inst->tdma->cbs = (dw1000_mac_interface_t){
         .id = DW1000_TDMA,
-        .rx_complete_cb = tdma_rx_complete_cb,
-        .tx_complete_cb = tdma_tx_complete_cb
+        .tx_complete_cb = tx_complete_cb,
+        .rx_complete_cb = rx_complete_cb
     };
-   
-    dw1000_add_extension_callbacks(inst, tdma_cbs);
+    dw1000_mac_append_interface(inst, &inst->tdma->cbs);
 
 #ifdef TDMA_TASKS_ENABLE
     os_callout_init(&tdma->event_cb, &tdma->eventq, tdma_superframe_event_cb, (void *) tdma);
@@ -135,6 +134,20 @@ tdma_free(tdma_instance_t * inst){
         inst->status.initialized = 0;
 }
 
+/**
+ * API to initialise the package, only one ccp service required in the system.
+ *
+ *
+ * @return void
+ */
+
+void tdma_pkg_init(void){
+
+    printf("{\"utime\": %lu,\"msg\": \"tdma_pkg_init\"}\n",os_cputime_ticks_to_usecs(os_cputime_get32()));
+
+    dw1000_dev_instance_t * inst = hal_dw1000_inst(0);
+    tdma_init(inst, MYNEWT_VAL(TDMA_PERIOD), MYNEWT_VAL(TDMA_NSLOTS)); 
+}
 
 #ifdef TDMA_TASKS_ENABLE
 /**
@@ -185,12 +198,12 @@ static void tdma_task(void *arg)
  */
 
 static bool 
-tdma_rx_complete_cb(struct _dw1000_dev_instance_t * inst){
+rx_complete_cb(struct _dw1000_dev_instance_t * inst, dw1000_mac_interface_t * cbs){
 
     tdma_instance_t * tdma = inst->tdma;
    
     if (inst->fctrl_array[0] == FCNTL_IEEE_BLINK_CCP_64){
-        DIAGMSG("{\"utime\": %lu,\"msg\": \"tdma_rx_complete_cb\"}\n",os_cputime_ticks_to_usecs(os_cputime_get32()));
+        DIAGMSG("{\"utime\": %lu,\"msg\": \"rx_complete_cb\"}\n",os_cputime_ticks_to_usecs(os_cputime_get32()));
         if (inst->tdma != NULL && inst->tdma->status.initialized){
             tdma->os_epoch = os_cputime_get32();
 #ifdef TDMA_TASKS_ENABLE
@@ -199,7 +212,7 @@ tdma_rx_complete_cb(struct _dw1000_dev_instance_t * inst){
             os_eventq_put(&inst->eventq, &inst->tdma->event_cb.c_ev);
 #endif
         }   
-        return true;
+        return false; // TDMA is an observer and should not return true
     }
     return false;
 }
@@ -212,12 +225,12 @@ tdma_rx_complete_cb(struct _dw1000_dev_instance_t * inst){
  */
 
 static bool 
-tdma_tx_complete_cb(struct _dw1000_dev_instance_t * inst){
+tx_complete_cb(struct _dw1000_dev_instance_t * inst, dw1000_mac_interface_t * cbs){
 
    tdma_instance_t * tdma = inst->tdma;
    
     if (inst->fctrl_array[0] == FCNTL_IEEE_BLINK_CCP_64){
-        DIAGMSG("{\"utime\": %lu,\"msg\": \"tdma_tx_complete_cb\"}\n",os_cputime_ticks_to_usecs(os_cputime_get32()));
+        DIAGMSG("{\"utime\": %lu,\"msg\": \"tx_complete_cb\"}\n",os_cputime_ticks_to_usecs(os_cputime_get32()));
         if (inst->tdma != NULL && inst->tdma->status.initialized){
             tdma->os_epoch = os_cputime_get32();
 #ifdef TDMA_TASKS_ENABLE
@@ -226,7 +239,7 @@ tdma_tx_complete_cb(struct _dw1000_dev_instance_t * inst){
             os_eventq_put(&inst->eventq, &inst->tdma->event_cb.c_ev);
 #endif
         }   
-        return true;
+        return false;   // TDMA is an observer and should not return true
     }
     return false;
 }
@@ -338,7 +351,7 @@ slot_timer_cb(void * arg){
     tdma_slot_t * slot = (tdma_slot_t *) arg;
     tdma_instance_t * tdma = slot->parent;
 
-    //DIAGMSG("{\"utime\": %lu,\"msg\": \"slot_timer_cb\"}\n",os_cputime_ticks_to_usecs(os_cputime_get32()));
+    DIAGMSG("{\"utime\": %lu,\"msg\": \"slot_timer_cb\"}\n",os_cputime_ticks_to_usecs(os_cputime_get32()));
   
 #ifdef TDMA_TASKS_ENABLE
     os_eventq_put(&tdma->eventq, &slot->event_cb.c_ev);
