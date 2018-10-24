@@ -78,7 +78,9 @@ typedef enum _dw1000_extension_id_t{
     DW1000_RNG_DS,                           //!< Ranging
     DW1000_RNG_DS_EXT,                       //!< Ranging
     DW1000_RANGE,                            //!< Ranging
-    DW1000_N_RANGES,                         //!< N_ranges
+    DW1000_NRNG,                             //!< Nrng
+    DW1000_NRNG_DS,                          //!< Nrng
+    DW1000_NRNG_DS_EXT,                      //!< Nrng
     DW1000_LWIP,
     DW1000_PAN,                              //!< Personal area network
     DW1000_PROVISION,                        //!< Provisioning
@@ -301,6 +303,9 @@ typedef struct _dw1000_dev_instance_t{
 #endif
 #if MYNEWT_VAL(TDMA_ENABLED)
     struct _tdma_instance_t * tdma;               //!< DW1000 tdma instance
+#endif
+#if MYNEWT_VAL(NRNG_ENABLED)
+    struct _dw1000_nrng_instance_t* nrng;
 #endif
     dw1000_dev_rxdiag_t rxdiag;                    //!< DW1000 receive diagnostics
     dw1000_dev_config_t config;                    //!< DW1000 device configurations  

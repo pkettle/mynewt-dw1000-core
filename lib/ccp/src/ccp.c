@@ -488,7 +488,8 @@ ccp_rx_complete_cb(struct _dw1000_dev_instance_t * inst, dw1000_mac_interface_t 
         }
     }
 #endif
-    os_sem_release(&inst->ccp->sem);
+    if (os_sem_get_count(&inst->ccp->sem) == 0)
+        os_sem_release(&inst->ccp->sem);  
     return false;
 }
 
@@ -529,7 +530,8 @@ ccp_tx_complete_cb(struct _dw1000_dev_instance_t * inst, dw1000_mac_interface_t 
     if (ccp->config.postprocess && ccp->status.valid) 
         os_eventq_put(os_eventq_dflt_get(), &ccp->callout_postprocess.c_ev);
     
-    os_sem_release(&inst->ccp->sem);  
+    if (os_sem_get_count(&inst->ccp->sem) == 0)
+        os_sem_release(&inst->ccp->sem);  
     return false;
 }
 
@@ -615,7 +617,7 @@ ccp_reset_cb(struct _dw1000_dev_instance_t * inst,  dw1000_mac_interface_t * cbs
 static dw1000_ccp_status_t 
 dw1000_ccp_send(struct _dw1000_dev_instance_t * inst, dw1000_dev_modes_t mode){
 
-    DIAGMSG("{\"utime\": %lu,\"msg\": \"dw1000_ccp_send \"}\n",os_cputime_ticks_to_usecs(os_cputime_get32()));
+    printf("{\"utime\": %lu,\"msg\": \"dw1000_ccp_send \"}\n",os_cputime_ticks_to_usecs(os_cputime_get32()));
     dw1000_ccp_instance_t * ccp = inst->ccp; 
 
     os_error_t err = os_sem_pend(&ccp->sem,  OS_TIMEOUT_NEVER);
