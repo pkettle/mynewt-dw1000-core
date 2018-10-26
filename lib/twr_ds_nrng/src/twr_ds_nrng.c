@@ -67,7 +67,7 @@ static dw1000_mac_interface_t g_cbs = {
 };
 
 
-static dw1000_nrng_config_t g_config = {
+static dw1000_rng_config_t g_config = {
     .tx_holdoff_delay = MYNEWT_VAL(TWR_DS_NRNG_TX_HOLDOFF),         // Send Time delay in usec.
     .rx_timeout_period = MYNEWT_VAL(TWR_DS_NRNG_RX_TIMEOUT),        // Receive response timeout in usec
     .tx_guard_delay = MYNEWT_VAL(TWR_DS_NRNG_TX_GUARD_DELAY)        // Guard delay to be added between each frame from node
@@ -106,7 +106,7 @@ twr_ds_nrng_free(dw1000_dev_instance_t * inst){
  *
  * @return true on sucess
  */
-dw1000_nrng_config_t * 
+dw1000_rng_config_t * 
 twr_ds_nrng_config(dw1000_dev_instance_t * inst){
     return &g_config;
 }
@@ -199,7 +199,7 @@ rx_complete_cb(dw1000_dev_instance_t * inst, dw1000_mac_interface_t * cbs)
     assert(inst->nrng);
     dw1000_nrng_instance_t * nrng = inst->nrng;
     uint16_t code, dst_address;
-    dw1000_nrng_config_t * config = dw1000_nrng_get_config(inst, DWT_DS_TWR_NRNG);
+    dw1000_rng_config_t * config = dw1000_nrng_get_config(inst, DWT_DS_TWR_NRNG);
     dw1000_dev_control_t control = inst->control_rx_context;
     dw1000_read_rx(inst, (uint8_t *) &code, offsetof(nrng_request_frame_t,code), sizeof(uint16_t));
     dw1000_read_rx(inst, (uint8_t *) &dst_address, offsetof(nrng_request_frame_t,dst_address), sizeof(uint16_t));
@@ -405,7 +405,7 @@ send_final_msg(dw1000_dev_instance_t * inst , nrng_frame_t * frame)
     //printf("final_cb\n");
     assert(inst->nrng);
     dw1000_nrng_instance_t * nrng = inst->nrng;
-    dw1000_nrng_config_t * config = dw1000_nrng_get_config(inst, DWT_DS_TWR_NRNG);
+    dw1000_rng_config_t * config = dw1000_nrng_get_config(inst, DWT_DS_TWR_NRNG);
     uint16_t nnodes = nrng->nnodes;
     dw1000_write_tx(inst, frame->array, 0, sizeof(nrng_request_frame_t));
     dw1000_write_tx_fctrl(inst, sizeof(nrng_request_frame_t), 0, true);

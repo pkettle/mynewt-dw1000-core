@@ -33,20 +33,21 @@
 #include <dw1000/dw1000_phy.h>
 #include <dw1000/dw1000_ftypes.h>
 #include <nranges/nranges.h>
+#include <rng/rng.h>
 #if MYNEWT_VAL(TWR_DS_NRNG_ENABLED)
 #include <twr_ds_nrng/twr_ds_nrng.h>
 #endif
 #if MYNEWT_VAL(TWR_DS_EXT_NRNG_ENABLED)
 #include <twr_ds_ext_nrng/twr_ds_ext_nrng.h>
 #endif
-static dw1000_nrng_config_t g_config = {
+static dw1000_rng_config_t g_config = {
     .tx_holdoff_delay = MYNEWT_VAL(NRNG_TX_HOLDOFF),         // Send Time delay in usec.
     .rx_timeout_period = MYNEWT_VAL(NRNG_RX_TIMEOUT),       // Receive response timeout in usec
     .tx_guard_delay = MYNEWT_VAL(NRNG_TX_GUARD_DELAY)
 };
 
 dw1000_nrng_instance_t *
-dw1000_nrng_init(dw1000_dev_instance_t * inst, dw1000_nrng_config_t* config, dw1000_nrng_device_type_t type, uint16_t nframes, uint16_t nnodes){
+dw1000_nrng_init(dw1000_dev_instance_t * inst, dw1000_rng_config_t* config, dw1000_nrng_device_type_t type, uint16_t nframes, uint16_t nnodes){
     assert(inst);
 
     if (inst->nrng == NULL ) {
@@ -114,6 +115,41 @@ dw1000_nrng_set_frames(dw1000_dev_instance_t * inst, uint16_t nframes){
 }
 
 /**
+ * API to configure dw1000 to start transmission after certain delay.
+ *
+ * @param inst          Pointer to dw1000_dev_instance_t. 
+ * @param dst_address   Address of the receiver to whom range request to be sent. 
+ * @param delay         Time until which request has to be resumed. 
+ * @param code          Represents mode of ranging DWT_SS_TWR enables single sided two way ranging DWT_DS_TWR enables double sided 
+ * two way ranging DWT_DS_TWR_EXT enables double sided two way ranging with extended frame.
+ *
+ * @return dw1000_dev_status_t
+ */
+dw1000_rng_config_t *
+dw1000_nrng_get_config(dw1000_dev_instance_t * inst, dw1000_nrng_modes_t code){
+
+    dw1000_rng_config_t * config;
+
+    switch (code){
+#if MYNEWT_VAL(TWR_DS_NRNG_ENABLED) 
+        case  DWT_DS_TWR_NRNG:                     //!< Double sided TWR
+            config = twr_ds_nrng_config(inst);
+            break;
+#endif
+#if MYNEWT_VAL(TWR_DS_EXT_NRNG_ENABLED) 
+        case DWT_DS_TWR_NRNG_EXT:                  //!< Double sided TWR in extended mode 
+            config = twr_ds_ext_nrng_config(inst);
+            break;
+#endif
+        default:
+            config = &g_config;
+    }
+    return config;
+}
+
+
+
+/**
  * API to assign the config parameters to range instance.
  *
  * @param inst    Pointer to dw1000_dev_instance_t. 
@@ -122,11 +158,11 @@ dw1000_nrng_set_frames(dw1000_dev_instance_t * inst, uint16_t nframes){
  * @return dw1000_dev_status_t 
  */
 dw1000_dev_status_t
-dw1000_nrng_config(dw1000_dev_instance_t * inst, dw1000_nrng_config_t * config){
+dw1000_nrng_config(dw1000_dev_instance_t * inst, dw1000_rng_config_t * config){
     assert(inst);
     assert(config);
 
-    memcpy(&inst->nrng->config, config, sizeof(dw1000_nrng_config_t));
+    memcpy(&inst->nrng->config, config, sizeof(dw1000_rng_config_t));
     return inst->status;
 }
 
@@ -149,39 +185,6 @@ dw1000_nrng_request_delay_start(dw1000_dev_instance_t * inst, uint16_t dst_addre
     return inst->status;
 }
 
-/**
- * API to configure dw1000 to start transmission after certain delay.
- *
- * @param inst          Pointer to dw1000_dev_instance_t. 
- * @param dst_address   Address of the receiver to whom range request to be sent. 
- * @param delay         Time until which request has to be resumed. 
- * @param code          Represents mode of ranging DWT_SS_TWR enables single sided two way ranging DWT_DS_TWR enables double sided 
- * two way ranging DWT_DS_TWR_EXT enables double sided two way ranging with extended frame.
- *
- * @return dw1000_dev_status_t
- */
-dw1000_nrng_config_t *
-dw1000_nrng_get_config(dw1000_dev_instance_t * inst, dw1000_nrng_modes_t code){
-
-    dw1000_nrng_config_t * config;
-
-    switch (code){
-#if MYNEWT_VAL(TWR_DS_NRNG_ENABLED) 
-        case  DWT_DS_TWR_NRNG:                     //!< Double sided TWR 
-            config = twr_ds_nrng_config(inst);
-            break;
-#endif
-#if MYNEWT_VAL(TWR_DS_EXT_NRNG_ENABLED) 
-        case DWT_DS_TWR_NRNG_EXT:                  //!< Double sided TWR in extended mode 
-            config = twr_ds_ext_nrng_config(inst);
-            break;
-#endif
-        default:
-            config = &g_config;
-    }
-    return config;
-}
-
 dw1000_dev_status_t
 dw1000_nrng_request(dw1000_dev_instance_t * inst, uint16_t dst_address, dw1000_nrng_modes_t code, uint16_t start_slot_id, uint16_t end_slot_id){
 
@@ -190,7 +193,7 @@ dw1000_nrng_request(dw1000_dev_instance_t * inst, uint16_t dst_address, dw1000_n
     dw1000_nrng_instance_t * nrng = inst->nrng;
     os_error_t err = os_sem_pend(&nrng->sem,  OS_TIMEOUT_NEVER);
     assert(err == OS_OK);
-    dw1000_nrng_config_t * config = dw1000_nrng_get_config(inst, code);
+    dw1000_rng_config_t * config = dw1000_nrng_get_config(inst, code);
     nrng_frame_t * frame  = nrng->frames[0][FIRST_FRAME_IDX];
 
     frame->seq_num++;
