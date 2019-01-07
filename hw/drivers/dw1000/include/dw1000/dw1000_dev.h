@@ -86,6 +86,8 @@ typedef enum _dw1000_extension_id_t{
     DW1000_LWIP,
     DW1000_PAN,                              //!< Personal area network
     DW1000_PROVISION,                        //!< Provisioning
+    DW1000_NMGR_UWB,
+    DW1000_NMGR_CMD,
     DW1000_APP0 = 1024, 
     DW1000_APP1, 
     DW1000_APP2
@@ -307,6 +309,9 @@ typedef struct _dw1000_dev_instance_t{
 #endif
 #if MYNEWT_VAL(NRNG_ENABLED)
     struct _dw1000_nrng_instance_t* nrng;
+#endif
+#if MYNEWT_VAL(NMGR_UWB_ENABLED)
+    struct _dw1000_nmgr_uwb_instance_t* nmgruwb;
 #endif
     dw1000_dev_rxdiag_t rxdiag;                    //!< DW1000 receive diagnostics
     dw1000_dev_config_t config;                    //!< DW1000 device configurations  
