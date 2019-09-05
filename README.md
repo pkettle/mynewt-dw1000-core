@@ -22,7 +22,7 @@
 
 # mynewt-dw1000-core
 
-[![Build Status](https://travis-ci.org/Decawave/mynewt-dw1000-core.svg?branch=master)](https://travis-ci.org/Decawave/mynewt-dw1000-core)
+[![Build Status](https://travis-ci.org/pkettle/mynewt-dw1000-core.svg?branch=master)](https://travis-ci.org/pkettle/mynewt-dw1000-core)
 
 ## Overview
 
